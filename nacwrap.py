@@ -5,6 +5,7 @@ This module contains functions to interact with the Nintex Workflow Cloud API.
 import json
 import os
 from datetime import datetime
+from typing import Optional
 
 import requests
 
@@ -87,7 +88,7 @@ class Decorators:
 
 
 @Decorators.refresh_token
-def create_instance(workflow_id: str, start_data: dict) -> dict:
+def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict:
     """
     Creates a Nintex workflow instance for a given workflow.
     If successful, returns rresponse which should be a dict containing
@@ -95,6 +96,8 @@ def create_instance(workflow_id: str, start_data: dict) -> dict:
     """
     if "NINTEX_BASE_URL" not in os.environ:
         raise Exception("NINTEX_BASE_URL not set in environment")
+    if start_data is None:
+        start_data = {}
     try:
         response = requests.post(
             os.environ["NINTEX_BASE_URL"]
