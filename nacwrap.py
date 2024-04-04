@@ -91,14 +91,17 @@ class Decorators:
 def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict:
     """
     Creates a Nintex workflow instance for a given workflow.
-    If successful, returns rresponse which should be a dict containing
+    If successful, returns response which should be a dict containing
     instance ID that was created.
     """
     if "NINTEX_BASE_URL" not in os.environ:
         raise Exception("NINTEX_BASE_URL not set in environment")
     if start_data is None:
+        print("No start data provided")
         start_data = {}
     try:
+        data = json.dumps({"startData": start_data})
+        print(data)
         response = requests.post(
             os.environ["NINTEX_BASE_URL"]
             + "/workflows/v1/designs/"
@@ -108,7 +111,7 @@ def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
                 "Content-Type": "application/json",
             },
-            data=json.dumps({"startData": start_data}),
+            data=,
             timeout=30,
         )
         response.raise_for_status()
