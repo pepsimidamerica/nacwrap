@@ -111,7 +111,7 @@ def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
                 "Content-Type": "application/json",
             },
-            data=,
+            data=data,
             timeout=30,
         )
         response.raise_for_status()
