@@ -195,3 +195,14 @@ def get_instance_data(
             print("Error, could not get instance data: ", response.content)
             break
     return results
+
+
+if __name__ == "__main__":
+    # Example usage
+    os.environ["NINTEX_BASE_URL"] = "https://us.nintex.io"
+    os.environ["NINTEX_CLIENT_ID"] = ""
+    os.environ["NINTEX_CLIENT_SECRET"] = ""
+    os.environ["NINTEX_GRANT_TYPE"] = "client_credentials"
+
+    results = get_instance_data(workflow_name="", order_by="DESC")
+    pass
