@@ -24,3 +24,11 @@ Function to create a workflow instance. Takes in two parameters.
 workflow_id: The ID of the workflow you want to create an instance for.
 
 start_data: Optional, any start data the worklfow requires. Should be provided in dictionary format. Returns JSON response if successful.
+
+### Instances - List Instances
+
+Function to return instance data. Takes a number of parameters for filtering what instance data to get.
+
+### Tasks - Delegate Assignment (TODO)
+
+Make function to delegate tasks from one user to another.
