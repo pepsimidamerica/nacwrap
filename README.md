@@ -4,7 +4,7 @@ nacwrap is a python package for interacting with the Nintex Automation Cloud sys
 
 ## Installation
 
-Haven't yet bothered to publish as a python package, intent is to simply add nacwrap as a git submodule in any projects where it's needed.
+`pip install nacwrap`
 
 ## Usage
 
