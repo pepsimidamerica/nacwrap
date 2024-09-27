@@ -121,3 +121,8 @@ def get_instance_data(
         url = data.get("nextLink")
 
     return results
+
+
+# TODO Delete instance
+
+# TODO Get instance start data
