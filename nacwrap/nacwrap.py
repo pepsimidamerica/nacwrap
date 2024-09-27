@@ -19,6 +19,9 @@ def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict
     Creates a Nintex workflow instance for a given workflow.
     If successful, returns response which should be a dict containing
     instance ID that was created.
+
+    :param workflow_id: ID of the component workflow to create an instance for
+    :param start_data: dictionary of start data, if the component workflow has any
     """
     if "NINTEX_BASE_URL" not in os.environ:
         raise Exception("NINTEX_BASE_URL not set in environment")
@@ -72,7 +75,6 @@ def get_instance_data(
     :param from_datetime: Start date to filter by
     :param to_datetime: End date to filter by
     :param page_size: Number of results per page
-
     """
     base_url = os.environ["NINTEX_BASE_URL"] + "/workflows/v2/instances"
     params = {
