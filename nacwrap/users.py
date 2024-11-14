@@ -7,7 +7,7 @@ from pprint import pprint
 from pydantic import BaseModel, Field
 
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _fetch_page
+from nacwrap._helpers import _fetch_page, _delete
 from nacwrap.data_model import *
 
 """
@@ -66,7 +66,7 @@ def users_list(
             )
 
         except requests.exceptions.RequestException as e:
-            raise Exception(f"Error, could not get instance data: {e}")
+            raise Exception(f"Error, could not get user data: {e}")
 
         data = response.json()
 
@@ -76,3 +76,38 @@ def users_list(
         url = data.get("nextLink")
 
     return results
+
+
+@Decorators.refresh_token
+def user_delete(id: str):
+    """
+    Delete a single Nintex User.
+
+    :param id: Nintex User ID to delete.
+    """
+
+    url = os.environ["NINTEX_BASE_URL"] + f"/tenants/v1/users/{id}"
+
+    try:
+        response = _delete(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+            params={},
+        )
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        raise Exception(
+            f"Error, user not found when deleting: {e.response.status_code} - {e.response.content}"
+        )
+
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Error, could not get instance data: {e}")
+
+    if response.status_code != 204:
+        raise Exception(
+            f"Error, invalid response code received when deleting user: {e.response.status_code} - {e.response.content}"
+        )
