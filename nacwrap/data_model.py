@@ -1,5 +1,5 @@
 from enum import Enum
-from datetime import date, datetime
+from datetime import date, datetime, timezone, timedelta
 from typing import Literal, Optional, Union, List
 from pydantic import BaseModel, Field
 
@@ -33,6 +33,10 @@ class NintexTask(BaseModel):
     workflowId: str
     workflowInstanceId: str
     workflowName: str
+
+    @property
+    def age(self) -> timedelta:
+        return datetime.now(timezone.utc) - self.createdDate
 
 
 class NintexUser(BaseModel):
