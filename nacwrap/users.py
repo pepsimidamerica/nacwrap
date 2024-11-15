@@ -21,10 +21,10 @@ def users_list(
     email: str = None,
     filter: str = None,
     role: str = None,
-) -> List[NintexUser]:
+) -> List[dict]:
     """
     Get Nintex User Data.
-    Returns: List of NintexUser pydantic objects.
+    Returns: List of Dictionaries.
 
     :param id: User's ID filter
     :param email: User's email filter
@@ -37,7 +37,7 @@ def users_list(
     # Remove None values
     params = {k: v for k, v in params.items() if v is not None}
 
-    results: List[NintexUser] = []
+    results = []
     url = base_url
     first_request = True
 
@@ -69,13 +69,36 @@ def users_list(
             raise Exception(f"Error, could not get user data: {e}")
 
         data = response.json()
-
-        for user in data["users"]:
-            results.append(NintexUser(**user))
+        results += data["users"]
 
         url = data.get("nextLink")
 
     return results
+
+
+def users_list_pd(
+    id: str = None,
+    email: str = None,
+    filter: str = None,
+    role: str = None,
+) -> List[NintexUser]:
+    """
+    Get Nintex User Data.
+    Returns: List of NintexUser pydantic objects.
+
+    :param id: User's ID filter
+    :param email: User's email filter
+    :param filter: User's name or email filter
+    :param role: User's role filter
+    """
+    usr_dict = users_list(id=id, email=email, filter=filter, role=role)
+    results: List[NintexUser] = []
+
+    for user in usr_dict:
+        results.append(NintexUser(**user))
+
+    return results
+	
 
 
 @Decorators.refresh_token
