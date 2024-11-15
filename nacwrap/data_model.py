@@ -31,7 +31,7 @@ class NintexTask(BaseModel):
         completedById: Optional[str] = Field(default=None)
         updatedDate: datetime
         escalatedTo: Optional[str] = Field(default=None)
-        urls: TaskURL
+        urls: Optional[TaskURL] = Field(default=None)
 
     # NintexTask Attributes
     assignmentBehavior: str
@@ -57,6 +57,14 @@ class NintexTask(BaseModel):
     @property
     def age(self) -> timedelta:
         return datetime.now(timezone.utc) - self.createdDate
+    
+    @property
+    def supports_multiple_users(self) -> bool:
+        """Returns true if task was created by the assign a task to multiple users action."""
+        if self.taskAssignments[0].urls is None:
+            return False
+        else:
+            return True
 
 
 class NintexUser(BaseModel):
