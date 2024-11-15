@@ -31,6 +31,15 @@ def _fetch_page(url, headers, params=None, data=None):
 
 @_basic_retry
 def _delete(url, headers, params=None, data=None):
-    response = requests.delete(url, headers=headers, params=params, data=data, timeout=30)
+    response = requests.delete(
+        url, headers=headers, params=params, data=data, timeout=30
+    )
     response.raise_for_status()
     return response
+
+
+@_basic_retry
+def _put(url, headers, params=None, data=None):
+    response = requests.put(url, headers=headers, params=params, data=data, timeout=30)
+    response.raise_for_status()
+    return

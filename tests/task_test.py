@@ -14,5 +14,11 @@ def test_task_search():
     tasks = nacwrap.task_search_pd(workflow_name='Purchase Approval', status=TaskStatus.TERMINATED)
     pprint(tasks)
 
+    for task in tasks:
+        for a in task.taskAssignments:
+            print(f'Workflow: {task.name}')
+            print(f'  User: {a.assignee}')
+            print(f'  Assignment ID: {a.id}\n')
+
 
 test_task_search()
