@@ -15,6 +15,49 @@ This module contains functions relating to individual task assignments.
 """
 
 
+def task_delegate(assignmentId: str, taskId: str, assignees: List[str], message: str):
+    """
+    Delegate a Nintex Task to another user.
+
+    :param assignmentId: ID of task assignment to delegate.
+    :param taskId: ID of task to delegate.
+    :param assignees: List of user emails to delegate the task to.
+    :param message: Message to include with delegation.
+    """
+
+    url = (
+        os.environ["NINTEX_BASE_URL"]
+        + f"/workflows/v2/tasks/{taskId}/assignments/{assignmentId}/delegate"
+    )
+    params = {"assignmentId": assignmentId, "taskId": taskId}
+    data = {"assignees": assignees, "message": message}
+
+    # Remove None values
+    params = {k: v for k, v in params.items() if v is not None}
+
+    try:
+        response = _put(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+            # params=params,
+            data=data,
+        )
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        raise Exception(
+            f"HTTP Error when delegating task: {e.response.status_code} - {e.response.content}"
+        )
+
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Error, could not delegate task: {e}")
+
+    print(f"Response Status: {response.status_code}")
+
+
 @Decorators.refresh_token
 def task_search(
     workflow_name: str = None,
@@ -132,48 +175,3 @@ def task_search_pd(
 # TODO Get a task
 
 # TODO Complete a task
-
-# TODO Delgate a task assignment
-
-
-def task_delegate(assignmentId: str, taskId: str, assignees: List[str], message: str):
-    """
-    Delegate a Nintex Task to another user.
-
-    :param assignmentId: ID of task assignment to delegate.
-    :param taskId: ID of task to delegate.
-    :param assignees: List of user emails to delegate the task to.
-    :param message: Message to include with delegation.
-    """
-
-    url = (
-        os.environ["NINTEX_BASE_URL"]
-        + f"/workflows/v2/tasks/{taskId}/assignments/{assignmentId}/delegate"
-    )
-    params = {"assignmentId": assignmentId, "taskId": taskId}
-    data = {"assignees": assignees, "message": message}
-
-    # Remove None values
-    params = {k: v for k, v in params.items() if v is not None}
-
-    try:
-        response = _put(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
-            },
-            # params=params,
-            data=data,
-        )
-        response.raise_for_status()
-
-    except requests.exceptions.HTTPError as e:
-        raise Exception(
-            f"HTTP Error when delegating task: {e.response.status_code} - {e.response.content}"
-        )
-
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"Error, could not delegate task: {e}")
-
-    print(f"Response Status: {response.status_code}")

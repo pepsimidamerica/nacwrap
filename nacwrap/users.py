@@ -16,6 +16,41 @@ This module contains functions relating to user management.
 
 
 @Decorators.refresh_token
+def user_delete(id: str):
+    """
+    Delete a single Nintex User.
+
+    :param id: Nintex User ID to delete.
+    """
+
+    url = os.environ["NINTEX_BASE_URL"] + f"/tenants/v1/users/{id}"
+
+    try:
+        response = _delete(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+            params={},
+        )
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        raise Exception(
+            f"Error, user not found when deleting: {e.response.status_code} - {e.response.content}"
+        )
+
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Error, could not get instance data: {e}")
+
+    if response.status_code != 204:
+        raise Exception(
+            f"Error, invalid response code received when deleting user: {e.response.status_code} - {e.response.content}"
+        )
+
+
+@Decorators.refresh_token
 def users_list(
     id: str = None,
     email: str = None,
@@ -98,39 +133,3 @@ def users_list_pd(
         results.append(NintexUser(**user))
 
     return results
-	
-
-
-@Decorators.refresh_token
-def user_delete(id: str):
-    """
-    Delete a single Nintex User.
-
-    :param id: Nintex User ID to delete.
-    """
-
-    url = os.environ["NINTEX_BASE_URL"] + f"/tenants/v1/users/{id}"
-
-    try:
-        response = _delete(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
-            },
-            params={},
-        )
-        response.raise_for_status()
-
-    except requests.exceptions.HTTPError as e:
-        raise Exception(
-            f"Error, user not found when deleting: {e.response.status_code} - {e.response.content}"
-        )
-
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"Error, could not get instance data: {e}")
-
-    if response.status_code != 204:
-        raise Exception(
-            f"Error, invalid response code received when deleting user: {e.response.status_code} - {e.response.content}"
-        )
