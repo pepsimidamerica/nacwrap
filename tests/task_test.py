@@ -7,6 +7,10 @@ sys.path.insert(0, "")
 from nacwrap import *
 
 
+def test_task_resolve():
+    pass
+
+
 def test_task_search():
     task_dict = nacwrap.task_search(
         # workflow_name="Purchase Approval",
@@ -33,16 +37,17 @@ def test_task_search():
             print(f"  Assignment ID: {a.id}\n")
 
             if task.supports_multiple_users:
-                nacwrap.task_delegate(
-                    assignmentId=a.id,
-                    taskId=task.id,
-                    assignees=["jmaynor@pepsimidamerica.com"],
-                    message="This is a test!",
-                )
+                # nacwrap.task_delegate(
+                #     assignmentId=a.id,
+                #     taskId=task.id,
+                #     assignees=["jmaynor@pepsimidamerica.com"],
+                #     message="This is a test!",
+                # )
                 exit(0)
 
             else:
-                print(f'Skipping unsupported Assign a Task assignment.')
+                print(f"Skipping unsupported Assign a Task assignment.")
 
 
-test_task_search()
+# test_task_search()
+test_task_resolve()

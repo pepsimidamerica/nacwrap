@@ -6,7 +6,7 @@ from typing import Literal, Optional, Union
 import requests
 
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _fetch_page
+from nacwrap._helpers import _fetch_page, _post
 from nacwrap.data_model import *
 
 
@@ -50,7 +50,7 @@ def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict
 
 
 @Decorators.refresh_token
-def get_instance(instanceId: str) -> dict:
+def instance_get(instanceId: str) -> dict:
     """
     Calls Nintex's 'Get a Workflow Instance' API endpoint.
     Returns data as python dictionary.
@@ -101,15 +101,15 @@ def get_instance(instanceId: str) -> dict:
     return results
 
 
-def get_instance_pd(instanceId: str) -> NintexInstance:
+def instance_get_pd(instanceId: str) -> InstanceActions:
     """
     Calls Nintex's 'Get a Workflow Instance' API endpoint.
     Returns data as a pydantic data model.
 
     :param instanceId: Unuiqe ID of workflow instance to return data for.
     """
-    instance = get_instance(instanceId=instanceId)
-    return NintexInstance(**instance)
+    instance = instance_get(instanceId=instanceId)
+    return InstanceActions(**instance)
 
 
 def get_instance_data(
@@ -121,8 +121,8 @@ def get_instance_data(
     page_size: Optional[int] = 100,
 ) -> list[dict]:
     """
-    Wrapper method for calling list_instances().
     This method is deprecated and list_instances() should be called directly instead.
+    Wrapper method for calling list_instances().
 
     Get Nintex instance data Follows nextLink until no more pages.
     Function goes through all instance data in Nintex.
@@ -139,7 +139,7 @@ def get_instance_data(
     :param page_size: Number of results per page
     """
 
-    return list_instances(
+    return instances_list(
         workflow_name=workflow_name,
         status=status,
         order_by=order_by,
@@ -150,7 +150,7 @@ def get_instance_data(
 
 
 @Decorators.refresh_token
-def list_instances(
+def instances_list(
     workflow_name: Optional[str] = None,
     status: Optional[str] = None,
     order_by: Union[Literal["ASC", "DESC"], None] = None,
@@ -173,6 +173,9 @@ def list_instances(
     :param to_datetime: End date to filter by
     :param page_size: Number of results per page
     """
+    if status is not None:
+        status = status.value
+
     base_url = os.environ["NINTEX_BASE_URL"] + "/workflows/v2/instances"
     params = {
         "workflowName": workflow_name,
@@ -222,6 +225,79 @@ def list_instances(
         url = data.get("nextLink")
 
     return results
+
+
+@Decorators.refresh_token
+def instances_list_pd(
+    workflow_name: Optional[str] = None,
+    status: Optional[str] = None,
+    order_by: Union[Literal["ASC", "DESC"], None] = None,
+    from_datetime: Optional[datetime] = None,
+    to_datetime: Optional[datetime] = None,
+    page_size: Optional[int] = 100,
+) -> List[NintexInstance]:
+    """
+    Get Nintex instance data Follows nextLink until no more pages.
+    Returns a list of NintexInstance pydantic objects.
+
+    :param workflow_name: Name of the workflow to filter by
+    :param status: Status of the workflow to filter by
+    :param order_by: Order of the results
+    :param from_datetime: Start date to filter by
+    :param to_datetime: End date to filter by
+    :param page_size: Number of results per page
+    """
+    instance = instances_list(
+        workflow_name=workflow_name,
+        status=status,
+        order_by=order_by,
+        from_datetime=from_datetime,
+        to_datetime=to_datetime,
+        page_size=page_size,
+    )
+    result: List[NintexInstance] = []
+    for i in instance:
+        result.append(NintexInstance(**i))
+        
+    return result
+
+
+@Decorators.refresh_token
+def instance_resolve(instance_id: str, resolveType: ResolveType, message: str):
+    """
+    Resolves a paused workflow instance.
+
+    :param instance_id: ID of instance to resolve.
+    :param resolveType: Specify how to resolve the paused instance: "1" to retry the failed action, "2" to fail the instance.
+    :param message: Message to display on the workflow instance page
+    """
+    url = (
+        os.environ["NINTEX_BASE_URL"] + f"/workflows/v1/instances/{instance_id}/resolve"
+    )
+
+    try:
+        response = _post(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+            params={},
+        )
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        raise Exception(
+            f"Error, user not found when resolving instance: {e.response.status_code} - {e.response.content}"
+        )
+
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Error, could not resolve instance: {e}")
+
+    if response.status_code != 204:
+        raise Exception(
+            f"Error, invalid response code received when resolving instance: {e.response.status_code} - {e.response.content}"
+        )
 
 
 # TODO Delete instance

@@ -47,3 +47,12 @@ def _put(url, headers, params=None, data=None):
     )
     response.raise_for_status()
     return response
+
+
+@_basic_retry
+def _post(url, headers, params=None, data=None):
+    response = requests.post(
+        url, headers=headers, params=params, data=json.dumps(data), timeout=30
+    )
+    response.raise_for_status()
+    return response
