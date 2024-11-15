@@ -13,7 +13,37 @@ class TaskStatus(Enum):
     ALL = "all"
 
 
+class NintexInstance(BaseModel):
+    """Response Data Model for 'Get a Workflow Instance' API Endpoint."""
+    class Workflow(BaseModel):
+        id: str
+        name: str
+        version: str
+        eventType: str
+
+    class Action(BaseModel):
+        id: str
+        actionInstanceId: str
+        name: str
+        label: str
+        type: str
+        parentId: Optional[str] = Field(default=None)
+        startDateTime: Optional[datetime] = Field(default=None)
+        errorMessage: Optional[str] = Field(default=None)
+        logMessage: Optional[str] = Field(default=None)
+
+    # NintexInstance attributes
+    instanceId: str
+    name: Optional[str] = Field(default=None)
+    startDateTime: datetime
+    status: str
+    errorMessage: Optional[str] = Field(default=None)
+    workflow: Workflow
+    actions: List[Action]
+
+
 class NintexTask(BaseModel):
+    """Response Data Model for Nintex Tasks from API Endpoints."""
 
     class TaskAssignment(BaseModel):
 
@@ -57,7 +87,7 @@ class NintexTask(BaseModel):
     @property
     def age(self) -> timedelta:
         return datetime.now(timezone.utc) - self.createdDate
-    
+
     @property
     def supports_multiple_users(self) -> bool:
         """Returns true if task was created by the assign a task to multiple users action."""
@@ -68,6 +98,7 @@ class NintexTask(BaseModel):
 
 
 class NintexUser(BaseModel):
+    """Response Data Model for Nintex Users from API Endpoints."""
     id: str
     email: str
     firstName: str

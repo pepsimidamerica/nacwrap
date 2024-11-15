@@ -97,7 +97,7 @@ def users_list(
 
         except requests.exceptions.HTTPError as e:
             raise Exception(
-                f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
+                f"Error, could not get user data: {e.response.status_code} - {e.response.content}"
             )
 
         except requests.exceptions.RequestException as e:

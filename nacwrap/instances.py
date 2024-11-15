@@ -7,6 +7,7 @@ import requests
 
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _fetch_page
+from nacwrap.data_model import *
 
 
 @Decorators.refresh_token
@@ -49,7 +50,107 @@ def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict
 
 
 @Decorators.refresh_token
+def get_instance(instanceId: str) -> dict:
+    """
+    Calls Nintex's 'Get a Workflow Instance' API endpoint.
+    Returns data as python dictionary.
+
+    :param instanceId: Unuiqe ID of workflow instance to return data for.
+    """
+    base_url = os.environ["NINTEX_BASE_URL"] + f"/workflows/v2/instances/{instanceId}"
+    params = {"instanceId": instanceId}
+
+    # Remove None values
+    params = {k: v for k, v in params.items() if v is not None}
+
+    results = {}
+    url = base_url
+    first_request = True
+
+    while url:
+        # If this is subsequent requests, don't need to pass params
+        # will be provided in the skip URL
+        if first_request:
+            first_request = False
+        else:
+            params = None
+
+        try:
+            response = _fetch_page(
+                url,
+                headers={
+                    "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                    "Content-Type": "application/json",
+                },
+                params=params,
+            )
+            response.raise_for_status()
+
+        except requests.exceptions.HTTPError as e:
+            raise Exception(
+                f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
+            )
+
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Error, could not get instance data: {e}")
+
+        data = response.json()
+        results = {**results, **data}
+        url = data.get("nextLink")
+
+    return results
+
+
+def get_instance_pd(instanceId: str) -> NintexInstance:
+    """
+    Calls Nintex's 'Get a Workflow Instance' API endpoint.
+    Returns data as a pydantic data model.
+
+    :param instanceId: Unuiqe ID of workflow instance to return data for.
+    """
+    instance = get_instance(instanceId=instanceId)
+    return NintexInstance(**instance)
+
+
 def get_instance_data(
+    workflow_name: Optional[str] = None,
+    status: Optional[str] = None,
+    order_by: Union[Literal["ASC", "DESC"], None] = None,
+    from_datetime: Optional[datetime] = None,
+    to_datetime: Optional[datetime] = None,
+    page_size: Optional[int] = 100,
+) -> list[dict]:
+    """
+    Wrapper method for calling list_instances().
+    This method is deprecated and list_instances() should be called directly instead.
+
+    Get Nintex instance data Follows nextLink until no more pages.
+    Function goes through all instance data in Nintex.
+
+    Note: If from_datetime and to_datetime are not provided, the Nintex API
+    defaults to returning the last 30 days. If you want everything, you need to
+    explicitly use some sufficiently large time range.
+
+    :param workflow_name: Name of the workflow to filter by
+    :param status: Status of the workflow to filter by
+    :param order_by: Order of the results
+    :param from_datetime: Start date to filter by
+    :param to_datetime: End date to filter by
+    :param page_size: Number of results per page
+    """
+
+    return list_instances(
+        workflow_name=workflow_name,
+        status=status,
+        order_by=order_by,
+        from_datetime=from_datetime,
+        to_datetime=to_datetime,
+        page_size=page_size,
+    )
+
+
+@Decorators.refresh_token
+def list_instances(
     workflow_name: Optional[str] = None,
     status: Optional[str] = None,
     order_by: Union[Literal["ASC", "DESC"], None] = None,
