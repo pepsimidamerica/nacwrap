@@ -14,6 +14,26 @@ class TaskStatus(Enum):
 
 
 class NintexTask(BaseModel):
+
+    class TaskAssignment(BaseModel):
+
+        class TaskURL(BaseModel):
+            formUrl: str
+
+        # TaskAssignment Attributes
+        id: str
+        status: str
+        assignee: str
+        createdDate: datetime
+        completedBy: Optional[str] = Field(default=None)
+        completedDate: Optional[datetime] = Field(default=None)
+        outcome: Optional[str] = Field(default=None)
+        completedById: Optional[str] = Field(default=None)
+        updatedDate: datetime
+        escalatedTo: Optional[str] = Field(default=None)
+        urls: TaskURL
+
+    # NintexTask Attributes
     assignmentBehavior: str
     completedDate: Optional[datetime] = Field(default=None)
     completionCriteria: str
@@ -29,7 +49,7 @@ class NintexTask(BaseModel):
     outcomes: Optional[List[str]] = Field(default=None)
     status: TaskStatus
     subject: str
-    taskAssignments: list
+    taskAssignments: List[TaskAssignment]
     workflowId: str
     workflowInstanceId: str
     workflowName: str
