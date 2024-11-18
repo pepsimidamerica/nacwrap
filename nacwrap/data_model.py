@@ -4,16 +4,110 @@ from typing import Literal, Optional, Union, List
 from pydantic import BaseModel, Field
 
 
-class TaskStatus(Enum):
+class TaskStatus(str, Enum):
     ACTIVE = "active"
     EXPIRED = "expired"
     COMPLETE = "complete"
     OVERRIDDEN = "overridden"
     TERMINATED = "terminated"
+    PAUSED = "paused"
     ALL = "all"
+
+    # Make values case insensitive when converting string data.
+    @classmethod
+    def _missing_(cls, value):
+        value = value.lower()
+        for member in cls:
+            if member.lower() == value:
+                return member
+        return None
+
+class ResolveType(Enum):
+    RETRY = "1"
+    FAIL = "2"
+
+
+class InstanceActions(BaseModel):
+    """Response Data Model for 'Get a Workflow Instance' API Endpoint."""
+
+    class Workflow(BaseModel):
+        id: str
+        name: str
+        version: str
+        eventType: str
+
+    class Action(BaseModel):
+        id: str
+        actionInstanceId: str
+        name: str
+        label: str
+        type: str
+        parentId: Optional[str] = Field(default=None)
+        startDateTime: Optional[datetime] = Field(default=None)
+        errorMessage: Optional[str] = Field(default=None)
+        logMessage: Optional[str] = Field(default=None)
+
+    # NintexInstance attributes
+    instanceId: str
+    name: Optional[str] = Field(default=None)
+    startDateTime: datetime
+    status: str
+    errorMessage: Optional[str] = Field(default=None)
+    workflow: Workflow
+    actions: List[Action]
+
+class NintexInstance(BaseModel):
+    class Workflow(BaseModel):
+        id: str
+        name: str
+        version: str
+
+    instanceId: str
+    instanceName: Optional[str] = Field(default=None)
+    workflow: Workflow
+    startDateTime: datetime
+    status: TaskStatus
+    startEvent: dict
+
+    # "instances": [
+    #     {
+    #         "instanceId": "9a4cf294-eef9-4eab-bf9f-3ddd9f1eb259_0_4",
+    #         "instanceName": "Get Approvers By Role PO_QUOTE prodsec@pepsimidamerica.com",
+    #         "workflow": {
+    #             "id": "bd28e634-b6a2-4d63-9005-ab45e5ed0862",
+    #             "name": "Get Approvers By Role",
+    #             "version": "3a300007-2134-4e13-8424-2a082bb3dbf3"
+    #         },
+    #         "startDateTime": "2024-11-14T16:17:19.1962469Z",
+    #         "status": "Paused",
+    #         "startEvent": {
+    #             "eventType": "nintex:externalstart"
+    #         }
+    #     },
 
 
 class NintexTask(BaseModel):
+    """Response Data Model for Nintex Tasks from API Endpoints."""
+
+    class TaskAssignment(BaseModel):
+
+        class TaskURL(BaseModel):
+            formUrl: str
+
+        # TaskAssignment Attributes
+        id: str
+        status: str
+        assignee: str
+        createdDate: datetime
+        completedBy: Optional[str] = Field(default=None)
+        completedDate: Optional[datetime] = Field(default=None)
+        outcome: Optional[str] = Field(default=None)
+        completedById: Optional[str] = Field(default=None)
+        updatedDate: datetime
+        escalatedTo: Optional[str] = Field(default=None)
+        urls: Optional[TaskURL] = Field(default=None)
+
+    # Task Attributes
     assignmentBehavior: str
     completedDate: Optional[datetime] = Field(default=None)
     completionCriteria: str
@@ -29,7 +123,7 @@ class NintexTask(BaseModel):
     outcomes: Optional[List[str]] = Field(default=None)
     status: TaskStatus
     subject: str
-    taskAssignments: list
+    taskAssignments: List[TaskAssignment]
     workflowId: str
     workflowInstanceId: str
     workflowName: str
@@ -38,8 +132,18 @@ class NintexTask(BaseModel):
     def age(self) -> timedelta:
         return datetime.now(timezone.utc) - self.createdDate
 
+    @property
+    def supports_multiple_users(self) -> bool:
+        """Returns true if task was created by the assign a task to multiple users action."""
+        if self.taskAssignments[0].urls is None:
+            return False
+        else:
+            return True
+
 
 class NintexUser(BaseModel):
+    """Response Data Model for Nintex Users from API Endpoints."""
+
     id: str
     email: str
     firstName: str

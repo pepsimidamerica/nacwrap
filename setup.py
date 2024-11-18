@@ -8,7 +8,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="nacwrap",
-    version="0.1.4",
+    version="0.1.5",
     description="Python package that acts as a wrapper for the Nintex Automation Cloud system.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -21,6 +21,6 @@ setup(
         "License :: OSI Approved :: The Unlicense (Unlicense)",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.12",
+    python_requires=">=3.10",
     install_requires=required,
 )

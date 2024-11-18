@@ -3,6 +3,8 @@ Helper functions for ezoff
 """
 
 import requests
+import json
+
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -31,6 +33,26 @@ def _fetch_page(url, headers, params=None, data=None):
 
 @_basic_retry
 def _delete(url, headers, params=None, data=None):
-    response = requests.delete(url, headers=headers, params=params, data=data, timeout=30)
+    response = requests.delete(
+        url, headers=headers, params=params, data=data, timeout=30
+    )
+    response.raise_for_status()
+    return response
+
+
+@_basic_retry
+def _put(url, headers, params=None, data=None):
+    response = requests.put(
+        url, headers=headers, params=params, data=json.dumps(data), timeout=30
+    )
+    response.raise_for_status()
+    return response
+
+
+@_basic_retry
+def _post(url, headers, params=None, data=None):
+    response = requests.post(
+        url, headers=headers, params=params, data=json.dumps(data), timeout=30
+    )
     response.raise_for_status()
     return response
