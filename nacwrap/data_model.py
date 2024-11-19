@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 class TaskStatus(str, Enum):
     ACTIVE = "active"
+    ESCALATED = "active-escalated"
     EXPIRED = "expired"
     COMPLETE = "complete"
     OVERRIDDEN = "overridden"
