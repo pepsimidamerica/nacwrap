@@ -64,6 +64,10 @@ class InstanceActions(BaseModel):
         errorMessage: Optional[str] = Field(default=None)
         logMessage: Optional[str] = Field(default=None)
 
+        @property
+        def age(self) -> timedelta:
+            return datetime.now(timezone.utc) - self.startDateTime
+
     # NintexInstance attributes
     instanceId: str
     name: Optional[str] = Field(default=None)
