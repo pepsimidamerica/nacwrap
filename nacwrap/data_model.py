@@ -4,6 +4,22 @@ from typing import Literal, Optional, Union, List
 from pydantic import BaseModel, Field
 
 
+class WorkflowStatus(str, Enum):
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    TERMINATED = "terminated"
+
+    # Make values case insensitive when converting string data.
+    @classmethod
+    def _missing_(cls, value):
+        value = value.lower()
+        for member in cls:
+            if member.lower() == value:
+                return member
+        return None
+
+
 class TaskStatus(str, Enum):
     ACTIVE = "active"
     ESCALATED = "active-escalated"
@@ -69,22 +85,6 @@ class NintexInstance(BaseModel):
     startDateTime: datetime
     status: TaskStatus
     startEvent: dict
-
-    # "instances": [
-    #     {
-    #         "instanceId": "9a4cf294-eef9-4eab-bf9f-3ddd9f1eb259_0_4",
-    #         "instanceName": "Get Approvers By Role PO_QUOTE prodsec@pepsimidamerica.com",
-    #         "workflow": {
-    #             "id": "bd28e634-b6a2-4d63-9005-ab45e5ed0862",
-    #             "name": "Get Approvers By Role",
-    #             "version": "3a300007-2134-4e13-8424-2a082bb3dbf3"
-    #         },
-    #         "startDateTime": "2024-11-14T16:17:19.1962469Z",
-    #         "status": "Paused",
-    #         "startEvent": {
-    #             "eventType": "nintex:externalstart"
-    #         }
-    #     },
 
 
 class NintexTask(BaseModel):
