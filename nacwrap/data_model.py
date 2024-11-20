@@ -4,6 +4,22 @@ from typing import Literal, Optional, Union, List
 from pydantic import BaseModel, Field
 
 
+class WorkflowStatus(str, Enum):
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    TERMINATED = "terminated"
+
+    # Make values case insensitive when converting string data.
+    @classmethod
+    def _missing_(cls, value):
+        value = value.lower()
+        for member in cls:
+            if member.lower() == value:
+                return member
+        return None
+
+
 class TaskStatus(str, Enum):
     ACTIVE = "active"
     ESCALATED = "active-escalated"
