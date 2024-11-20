@@ -258,7 +258,7 @@ def instances_list_pd(
     result: List[NintexInstance] = []
     for i in instance:
         result.append(NintexInstance(**i))
-        
+
     return result
 
 
@@ -300,6 +300,51 @@ def instance_resolve(instance_id: str, resolveType: ResolveType, message: str):
         )
 
 
-# TODO Delete instance
+@Decorators.refresh_token
+def instance_start_data(instance_id: str):
+    """
+    Returns start data from a specific workflow instance.
 
-# TODO Get instance start data
+    :param instance_id: ID of instance to return start data for.
+    """
+    url = (
+        os.environ["NINTEX_BASE_URL"]
+        + f"/workflows/v2/instances/{instance_id}/startdata"
+    )
+
+    try:
+        response = _fetch_page(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+            params={},
+        )
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        raise Exception(
+            f"Error, instance not found when retrieving start data: {e.response.status_code} - {e.response.content}"
+        )
+
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Error, could not get instance start data: {e}")
+
+    data = response.json()
+    return data
+
+
+def instance_start_data_pd(instance_id: str, pydantic_model: InstanceStartData):
+    """
+    Returns start data as a pydantic object for a specific workflow instance.
+
+    :param instance_id: ID of instance to return start data for.
+    :param pydantic_model: Pydantic model to populate with results returned from Nintex API.
+    """
+
+    sd = instance_start_data(instance_id=instance_id)
+    return pydantic_model(**sd)
+
+
+# TODO Delete instance

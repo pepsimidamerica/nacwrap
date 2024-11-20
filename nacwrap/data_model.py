@@ -160,3 +160,7 @@ class NintexUser(BaseModel):
     @property
     def name(self):
         return self.firstName + " " + self.lastName
+
+
+class InstanceStartData(BaseModel):
+    pass
