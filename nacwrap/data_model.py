@@ -70,22 +70,6 @@ class NintexInstance(BaseModel):
     status: TaskStatus
     startEvent: dict
 
-    # "instances": [
-    #     {
-    #         "instanceId": "9a4cf294-eef9-4eab-bf9f-3ddd9f1eb259_0_4",
-    #         "instanceName": "Get Approvers By Role PO_QUOTE prodsec@pepsimidamerica.com",
-    #         "workflow": {
-    #             "id": "bd28e634-b6a2-4d63-9005-ab45e5ed0862",
-    #             "name": "Get Approvers By Role",
-    #             "version": "3a300007-2134-4e13-8424-2a082bb3dbf3"
-    #         },
-    #         "startDateTime": "2024-11-14T16:17:19.1962469Z",
-    #         "status": "Paused",
-    #         "startEvent": {
-    #             "eventType": "nintex:externalstart"
-    #         }
-    #     },
-
 
 class NintexTask(BaseModel):
     """Response Data Model for Nintex Tasks from API Endpoints."""
