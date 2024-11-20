@@ -83,7 +83,7 @@ class NintexInstance(BaseModel):
     instanceName: Optional[str] = Field(default=None)
     workflow: Workflow
     startDateTime: datetime
-    status: TaskStatus
+    status: WorkflowStatus
     startEvent: dict
 
 
