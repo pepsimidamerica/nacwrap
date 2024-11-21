@@ -118,7 +118,7 @@ class NintexTask(BaseModel):
     completionCriteria: str
     createdDate: datetime
     description: str
-    dueDate: datetime
+    dueDate: Optional[datetime] = Field(default=None)
     id: str
     initiator: str
     isAuthenticated: bool
