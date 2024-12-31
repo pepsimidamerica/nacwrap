@@ -39,6 +39,7 @@ class TaskStatus(str, Enum):
                 return member
         return None
 
+
 class ResolveType(Enum):
     RETRY = "1"
     FAIL = "2"
@@ -61,12 +62,16 @@ class InstanceActions(BaseModel):
         type: str
         parentId: Optional[str] = Field(default=None)
         startDateTime: Optional[datetime] = Field(default=None)
+        endDateTime: Optional[datetime] = Field(default=None)
         errorMessage: Optional[str] = Field(default=None)
         logMessage: Optional[str] = Field(default=None)
 
         @property
         def age(self) -> timedelta:
-            return datetime.now(timezone.utc) - self.startDateTime
+            if self.startDateTime:
+                return datetime.now(timezone.utc) - self.startDateTime
+            else:
+                return timedelta(days=0)
 
     # NintexInstance attributes
     instanceId: str
@@ -76,6 +81,7 @@ class InstanceActions(BaseModel):
     errorMessage: Optional[str] = Field(default=None)
     workflow: Workflow
     actions: List[Action]
+
 
 class NintexInstance(BaseModel):
     class Workflow(BaseModel):
@@ -160,6 +166,18 @@ class NintexUser(BaseModel):
     @property
     def name(self):
         return self.firstName + " " + self.lastName
+
+
+class NintexWorkflows(BaseModel):
+    """Response Data Model for Nintex Workflows API Endpoints."""
+
+    class Workflow(BaseModel):
+        id: str
+        name: str
+        lastModified: datetime
+
+    # NintexWorkflows Attributes
+    workflows: List[Workflow]
 
 
 class InstanceStartData(BaseModel):
