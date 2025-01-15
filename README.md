@@ -20,11 +20,11 @@ Several environment variables are required for nacwrap to function.
 ### Instances - Create Instance
 
 Function to create a workflow instance. Takes in two parameters.
+
 | Param       | Description                                                                                                                   |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | workflow_id | The ID of the workflow you want to create an instance for.                                                                    |
 | start_data  | Optional, any start data the worklfow requires. Should be provided in dictionary format. Returns JSON response if successful. |
-
 
 ### Instances - List Instances
 
@@ -37,6 +37,7 @@ Make function to delegate tasks from one user to another.
 ### Tasks - Task Search
 
 Returns Nintex Tasks as a list of NintexTask objects. Takes a number of parameters for filtering what tasks to retrieve.
+
 | Param         | Description                                           |
 | ------------- | ----------------------------------------------------- |
 | workflow_name | Limit results to workflows matching this name.        |
@@ -49,6 +50,7 @@ Returns Nintex Tasks as a list of NintexTask objects. Takes a number of paramete
 ### Users - List Users
 
 Returns Nintex Users as a list of NintexUser objects. Takes a number of parameters for filtering what users to retrieve.
+
 | Param  | Description                                       |
 | ------ | ------------------------------------------------- |
 | id     | Limit results to user matching this guid          |
