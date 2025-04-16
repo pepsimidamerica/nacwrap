@@ -1,15 +1,21 @@
 import json
 import os
 from datetime import datetime
-from typing import Literal, Optional, Union
+from typing import List, Literal, Optional, Union
 
 import requests
 
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _fetch_page, _post
-from nacwrap.data_model import *
+from nacwrap._helpers import _basic_retry, _fetch_page, _post
+from nacwrap.data_model import (
+    InstanceActions,
+    InstanceStartData,
+    NintexInstance,
+    ResolveType,
+)
 
 
+@_basic_retry
 @Decorators.refresh_token
 def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict:
     """
@@ -43,12 +49,15 @@ def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict
         raise Exception(
             f"Error creating instance for {start_data}: {e.response.status_code} - {e.response.content}"
         )
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
     except requests.exceptions.RequestException as e:
         raise Exception(f"Error creating instance for {start_data}: {e}")
 
     return response.json()
 
 
+@_basic_retry
 @Decorators.refresh_token
 def instance_get(instanceId: str) -> dict:
     """
@@ -90,7 +99,8 @@ def instance_get(instanceId: str) -> dict:
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
             )
-
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            raise
         except requests.exceptions.RequestException as e:
             raise Exception(f"Error, could not get instance data: {e}")
 
@@ -184,7 +194,9 @@ def instances_list(
         "from": (
             from_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if from_datetime else None
         ),
-        "to": to_datetime.strftime("%Y-%m-%dT23:59:59.0000000Z") if to_datetime else None,
+        "to": to_datetime.strftime("%Y-%m-%dT23:59:59.0000000Z")
+        if to_datetime
+        else None,
         "pageSize": page_size,
     }
 
@@ -217,6 +229,8 @@ def instances_list(
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
             )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            raise
         except requests.exceptions.RequestException as e:
             raise Exception(f"Error, could not get instance data: {e}")
 

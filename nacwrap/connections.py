@@ -3,8 +3,10 @@ import os
 import requests
 
 from nacwrap._auth import Decorators
+from nacwrap._helpers import _basic_retry
 
 
+@_basic_retry
 @Decorators.refresh_token
 def get_connections() -> list[dict]:
     """
@@ -25,6 +27,8 @@ def get_connections() -> list[dict]:
         raise Exception(
             f"Error getting connections: {e.response.status_code} - {e.response.content}"
         )
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+        raise
     except requests.exceptions.RequestException as e:
         raise Exception(f"Error getting connections: {e}")
 

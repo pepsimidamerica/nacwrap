@@ -7,8 +7,10 @@ import os
 import requests
 
 from nacwrap._auth import Decorators
+from nacwrap._helpers import _basic_retry
 
 
+@_basic_retry
 @Decorators.refresh_token
 def get_datasources() -> dict:
     """
@@ -29,12 +31,15 @@ def get_datasources() -> dict:
         raise Exception(
             f"Error getting data sources: {e.response.status_code} - {e.response.content}"
         )
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+        raise
     except requests.exceptions.RequestException as e:
         raise Exception(f"Error getting data sources: {e}")
 
     return response.json().get("datasources", [])
 
 
+@_basic_retry
 @Decorators.refresh_token
 def get_datasource_connectors() -> dict:
     """
@@ -55,6 +60,8 @@ def get_datasource_connectors() -> dict:
         raise Exception(
             f"Error getting data source connectors: {e.response.status_code} - {e.response.content}"
         )
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+        raise
     except requests.exceptions.RequestException as e:
         raise Exception(f"Error getting data source connectors: {e}")
 
