@@ -1,7 +1,5 @@
-import os
 import sys
 from datetime import datetime, timedelta
-from pprint import pprint
 
 from dotenv import load_dotenv
 
@@ -12,8 +10,9 @@ sys.path.insert(0, "")
 
 from nacwrap import nacwrap
 
-res = nacwrap.get_datasource_connectors()
+fr = datetime.now() - timedelta(hours=3)
+to = datetime.now()
 
-pprint(res)
+res = nacwrap.instances_list(workflow_name="Form 279", from_datetime=fr, to_datetime=to)
 
 pass

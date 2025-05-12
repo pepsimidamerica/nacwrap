@@ -194,9 +194,7 @@ def instances_list(
         "from": (
             from_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if from_datetime else None
         ),
-        "to": to_datetime.strftime("%Y-%m-%dT23:59:59.0000000Z")
-        if to_datetime
-        else None,
+        "to": to_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if to_datetime else None,
         "pageSize": page_size,
     }
 
