@@ -203,4 +203,27 @@ def task_complete(taskId: str, assignmentId: str, outcome: str):
     return response.json()
 
 
-# TODO Get a task
+@Decorators.refresh_token
+def task_get(taskId: str):
+    """
+    Get the details of a specific Nintex task.
+    """
+    url = os.environ["NINTEX_BASE_URL"] + f"/workflows/v2/tasks/{taskId}"
+
+    try:
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+        )
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        raise Exception(
+            f"HTTP Error when getting task: {e.response.status_code} - {e.response.content}"
+        )
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Error, could not get task: {e}")
+
+    return response.json()
