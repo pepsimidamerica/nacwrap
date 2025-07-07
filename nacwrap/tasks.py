@@ -1,21 +1,17 @@
 import os
-from enum import Enum
-from datetime import date, datetime
-from typing import Literal, Optional, Union, List
-import requests
-from pprint import pprint
-from pydantic import BaseModel, Field
+from datetime import date
 
+import requests
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _fetch_page, _put
-from nacwrap.data_model import *
+from nacwrap.data_model import NintexTask, TaskStatus
 
 """
 This module contains functions relating to individual task assignments.
 """
 
 
-def task_delegate(assignmentId: str, taskId: str, assignees: List[str], message: str):
+def task_delegate(assignmentId: str, taskId: str, assignees: list[str], message: str):
     """
     Delegate a Nintex Task to another user.
 
@@ -60,13 +56,13 @@ def task_delegate(assignmentId: str, taskId: str, assignees: List[str], message:
 
 @Decorators.refresh_token
 def task_search(
-    workflow_name: str = None,
-    instance_id: str = None,
-    status: TaskStatus = None,
-    assignee: str = None,
-    dt_from: date = None,
-    dt_to: date = None,
-) -> List[dict]:
+    workflow_name: str | None = None,
+    instance_id: str | None = None,
+    status: TaskStatus | None = None,
+    assignee: str | None = None,
+    dt_from: date | None = None,
+    dt_to: date | None = None,
+) -> list[dict]:
     """
     Get Nintex Task data.
     Returns: List of Dictionaries.
@@ -135,13 +131,13 @@ def task_search(
 
 
 def task_search_pd(
-    workflow_name: str = None,
-    instance_id: str = None,
-    status: TaskStatus = None,
-    assignee: str = None,
-    dt_from: date = None,
-    dt_to: date = None,
-) -> List[NintexTask]:
+    workflow_name: str | None = None,
+    instance_id: str | None = None,
+    status: TaskStatus | None = None,
+    assignee: str | None = None,
+    dt_from: date | None = None,
+    dt_to: date | None = None,
+) -> list[NintexTask]:
     """
     Get Nintex Task data.
     Returns: List of NintexTask pydantic objects.
@@ -165,13 +161,46 @@ def task_search_pd(
         dt_from=dt_from,
         dt_to=dt_to,
     )
-    results: List[NintexTask] = []
+    results: list[NintexTask] = []
     for task in task_dict:
         results.append(NintexTask(**task))
 
     return results
 
 
-# TODO Get a task
+@Decorators.refresh_token
+def task_complete(taskId: str, assignmentId: str, outcome: str):
+    """
+    Completes a Nintex task assignment.
 
-# TODO Complete a task
+    :param taskId: ID of the task to complete.
+    :param assignmentId: ID of the task assignment to complete.
+    :param outcome: Outcome of the task completion. MUST match one of the outcomes
+                    defined in the given task definition.
+    """
+    url = (
+        os.environ["NINTEX_BASE_URL"]
+        + f"/workflows/v2/tasks/{taskId}/assignments/{assignmentId}"
+    )
+
+    try:
+        response = requests.patch(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+            json={"outcome": outcome},
+        )
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        raise Exception(
+            f"HTTP Error when completing task: {e.response.status_code} - {e.response.content}"
+        )
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Error, could not complete task: {e}")
+
+    return response.json()
+
+
+# TODO Get a task
