@@ -1,15 +1,16 @@
 import json
 import os
 from datetime import datetime
-from typing import Literal, Optional, Union
+from typing import List, Literal, Optional, Union
 
 import requests
 
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _fetch_page, _post
+from nacwrap._helpers import _basic_retry, _fetch_page, _post
 from nacwrap.data_model import *
 
 
+@_basic_retry
 @Decorators.refresh_token
 def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict:
     """
@@ -43,12 +44,15 @@ def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict
         raise Exception(
             f"Error creating instance for {start_data}: {e.response.status_code} - {e.response.content}"
         )
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
     except requests.exceptions.RequestException as e:
         raise Exception(f"Error creating instance for {start_data}: {e}")
 
     return response.json()
 
 
+@_basic_retry
 @Decorators.refresh_token
 def instance_get(instanceId: str) -> dict:
     """
@@ -90,7 +94,8 @@ def instance_get(instanceId: str) -> dict:
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
             )
-
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            raise
         except requests.exceptions.RequestException as e:
             raise Exception(f"Error, could not get instance data: {e}")
 
@@ -226,6 +231,8 @@ def instances_list(
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
             )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            raise
         except requests.exceptions.RequestException as e:
             raise Exception(f"Error, could not get instance data: {e}")
 
