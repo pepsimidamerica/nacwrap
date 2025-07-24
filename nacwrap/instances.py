@@ -156,6 +156,8 @@ def instances_list(
     order_by: Union[Literal["ASC", "DESC"], None] = None,
     from_datetime: Optional[datetime] = None,
     to_datetime: Optional[datetime] = None,
+    endDateTimeFrom: Optional[datetime] = None,
+    endDateTimeTo: Optional[datetime] = None,
     page_size: Optional[int] = 100,
 ) -> list[dict]:
     """
@@ -171,6 +173,8 @@ def instances_list(
     :param order_by: Order of the results
     :param from_datetime: Start date to filter by
     :param to_datetime: End date to filter by
+    :param endDateTimeFrom: Begin date to filter intance end date.
+    :param endDateTimeTo: End date to filter intance start end.
     :param page_size: Number of results per page
     """
     if status is not None:
@@ -178,13 +182,18 @@ def instances_list(
 
     base_url = os.environ["NINTEX_BASE_URL"] + "/workflows/v2/instances"
     params = {
-        "workflowName": workflow_name,
+        # "workflowName": workflow_name,        
+        "workflowName": (workflow_name if workflow_name else None),
         "status": status,
         "order": order_by,
         "from": (
             from_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if from_datetime else None
         ),
         "to": to_datetime.strftime("%Y-%m-%dT23:59:59.0000000Z") if to_datetime else None,
+        "endDateTimeFrom": (
+            endDateTimeFrom.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if endDateTimeFrom else None
+        ),
+        "endDateTimeTo": endDateTimeTo.strftime("%Y-%m-%dT23:59:59.0000000Z") if endDateTimeTo else None,
         "pageSize": page_size,
     }
 
@@ -234,17 +243,21 @@ def instances_list_pd(
     order_by: Union[Literal["ASC", "DESC"], None] = None,
     from_datetime: Optional[datetime] = None,
     to_datetime: Optional[datetime] = None,
+    endDateTimeFrom: Optional[datetime] = None,
+    endDateTimeTo: Optional[datetime] = None,
     page_size: Optional[int] = 100,
 ) -> List[NintexInstance]:
     """
     Get Nintex instance data Follows nextLink until no more pages.
     Returns a list of NintexInstance pydantic objects.
 
-    :param workflow_name: Name of the workflow to filter by
-    :param status: Status of the workflow to filter by
-    :param order_by: Order of the results
-    :param from_datetime: Start date to filter by
-    :param to_datetime: End date to filter by
+    :param workflow_name: Name of the workflow to filter by.
+    :param status: Status of the workflow to filter by.
+    :param order_by: Order of the results.
+    :param from_datetime: Begin date to filter intance start date.
+    :param to_datetime: End date to filter intance start date.
+    :param endDateTimeFrom: Begin date to filter intance end date.
+    :param endDateTimeTo: End date to filter intance start end.
     :param page_size: Number of results per page
     """
     instance = instances_list(
@@ -253,6 +266,8 @@ def instances_list_pd(
         order_by=order_by,
         from_datetime=from_datetime,
         to_datetime=to_datetime,
+        endDateTimeFrom=endDateTimeFrom,
+        endDateTimeTo=endDateTimeTo,
         page_size=page_size,
     )
     result: List[NintexInstance] = []
