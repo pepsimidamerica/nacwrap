@@ -84,6 +84,9 @@ class InstanceActions(BaseModel):
 
 
 class NintexInstance(BaseModel):
+    class StartEvent(BaseModel):
+        eventType: str  # Optional[str] = Field(default=None)
+
     class Workflow(BaseModel):
         id: str
         name: str
@@ -93,8 +96,9 @@ class NintexInstance(BaseModel):
     instanceName: Optional[str] = Field(default=None)
     workflow: Workflow
     startDateTime: datetime
+    endDateTime: Optional[datetime] = Field(default=None)
     status: WorkflowStatus
-    startEvent: dict
+    startEvent: StartEvent
 
 
 class NintexTask(BaseModel):
