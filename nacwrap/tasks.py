@@ -1,21 +1,20 @@
-import os
-from enum import Enum
-from datetime import date, datetime
-from typing import Literal, Optional, Union, List
-import requests
-from pprint import pprint
-from pydantic import BaseModel, Field
-
-from nacwrap._auth import Decorators
-from nacwrap._helpers import _fetch_page, _put
-from nacwrap.data_model import *
-
 """
 This module contains functions relating to individual task assignments.
 """
 
+import logging
+import os
+from datetime import date
 
-def task_delegate(assignmentId: str, taskId: str, assignees: List[str], message: str):
+import requests
+from nacwrap._auth import Decorators
+from nacwrap._helpers import _fetch_page, _put
+from nacwrap.data_model import NintexTask, TaskStatus
+
+logger = logging.getLogger(__name__)
+
+
+def task_delegate(assignmentId: str, taskId: str, assignees: list[str], message: str):
     """
     Delegate a Nintex Task to another user.
 
@@ -48,25 +47,29 @@ def task_delegate(assignmentId: str, taskId: str, assignees: List[str], message:
         response.raise_for_status()
 
     except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"HTTP Error when delegating task: {e.response.status_code} - {e.response.content}"
+        )
         raise Exception(
             f"HTTP Error when delegating task: {e.response.status_code} - {e.response.content}"
         )
 
     except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not delegate task: {e}")
         raise Exception(f"Error, could not delegate task: {e}")
 
-    print(f"Response Status: {response.status_code}")
+    logger.info(f"Response Status: {response.status_code}")
 
 
 @Decorators.refresh_token
 def task_search(
-    workflow_name: str = None,
-    instance_id: str = None,
-    status: TaskStatus = None,
-    assignee: str = None,
-    dt_from: date = None,
-    dt_to: date = None,
-) -> List[dict]:
+    workflow_name: str | None = None,
+    instance_id: str | None = None,
+    status: TaskStatus | None = None,
+    assignee: str | None = None,
+    dt_from: date | None = None,
+    dt_to: date | None = None,
+) -> list[dict]:
     """
     Get Nintex Task data.
     Returns: List of Dictionaries.
@@ -120,11 +123,15 @@ def task_search(
             response.raise_for_status()
 
         except requests.exceptions.HTTPError as e:
+            logger.error(
+                f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
+            )
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
             )
 
         except requests.exceptions.RequestException as e:
+            logger.error(f"Error, could not get instance data: {e}")
             raise Exception(f"Error, could not get instance data: {e}")
 
         data = response.json()
@@ -135,13 +142,13 @@ def task_search(
 
 
 def task_search_pd(
-    workflow_name: str = None,
-    instance_id: str = None,
-    status: TaskStatus = None,
-    assignee: str = None,
-    dt_from: date = None,
-    dt_to: date = None,
-) -> List[NintexTask]:
+    workflow_name: str | None = None,
+    instance_id: str | None = None,
+    status: TaskStatus | None = None,
+    assignee: str | None = None,
+    dt_from: date | None = None,
+    dt_to: date | None = None,
+) -> list[NintexTask]:
     """
     Get Nintex Task data.
     Returns: List of NintexTask pydantic objects.
@@ -165,7 +172,7 @@ def task_search_pd(
         dt_from=dt_from,
         dt_to=dt_to,
     )
-    results: List[NintexTask] = []
+    results: list[NintexTask] = []
     for task in task_dict:
         results.append(NintexTask(**task))
 

@@ -1,7 +1,16 @@
+"""
+Module for handling getting (and refreshing) the Nintex bearer token
+When adding a new nacwrap function that hits the Nintex API, just add the refresh_token
+decorator to it.
+"""
+
+import logging
 import os
 from datetime import datetime
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 class Decorators:
@@ -65,8 +74,10 @@ class Decorators:
         try:
             os.environ["NTX_BEARER_TOKEN"] = response.json()["access_token"]
         except Exception as e:
+            logger.error(f"Error, could not set OS env bearer token: {e}")
             raise Exception(f"Error, could not set OS env bearer token: {e}")
         try:
             os.environ["NTX_EXPIRES_AT"] = response.json()["expires_at"]
         except Exception as e:
+            logger.error(f"Error, could not set os env expires at: {e}")
             raise Exception(f"Error, could not set os env expires at: {e}")

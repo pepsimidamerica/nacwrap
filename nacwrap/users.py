@@ -1,18 +1,16 @@
-import os
-from enum import Enum
-from datetime import date, datetime
-from typing import Literal, Optional, Union, List
-import requests
-from pprint import pprint
-from pydantic import BaseModel, Field
-
-from nacwrap._auth import Decorators
-from nacwrap._helpers import _fetch_page, _delete
-from nacwrap.data_model import *
-
 """
 This module contains functions relating to user management.
 """
+
+import logging
+import os
+
+import requests
+from nacwrap._auth import Decorators
+from nacwrap._helpers import _delete, _fetch_page
+from nacwrap.data_model import NintexUser
+
+logger = logging.getLogger(__name__)
 
 
 @Decorators.refresh_token
@@ -37,26 +35,33 @@ def user_delete(id: str):
         response.raise_for_status()
 
     except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"Error, user not found when deleting: {e.response.status_code} - {e.response.content}"
+        )
         raise Exception(
             f"Error, user not found when deleting: {e.response.status_code} - {e.response.content}"
         )
 
     except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not get instance data: {e}")
         raise Exception(f"Error, could not get instance data: {e}")
 
     if response.status_code != 204:
+        logger.error(
+            f"Error, invalid response code received when deleting user: {response.status_code} - {response.content}"
+        )
         raise Exception(
-            f"Error, invalid response code received when deleting user: {e.response.status_code} - {e.response.content}"
+            f"Error, invalid response code received when deleting user: {response.status_code} - {response.content}"
         )
 
 
 @Decorators.refresh_token
 def users_list(
-    id: str = None,
-    email: str = None,
-    filter: str = None,
-    role: str = None,
-) -> List[dict]:
+    id: str | None = None,
+    email: str | None = None,
+    filter: str | None = None,
+    role: str | None = None,
+) -> list[dict]:
     """
     Get Nintex User Data.
     Returns: List of Dictionaries.
@@ -96,11 +101,15 @@ def users_list(
             response.raise_for_status()
 
         except requests.exceptions.HTTPError as e:
+            logger.error(
+                f"Error, could not get user data: {e.response.status_code} - {e.response.content}"
+            )
             raise Exception(
                 f"Error, could not get user data: {e.response.status_code} - {e.response.content}"
             )
 
         except requests.exceptions.RequestException as e:
+            logger.error(f"Error, could not get user data: {e}")
             raise Exception(f"Error, could not get user data: {e}")
 
         data = response.json()
@@ -112,11 +121,11 @@ def users_list(
 
 
 def users_list_pd(
-    id: str = None,
-    email: str = None,
-    filter: str = None,
-    role: str = None,
-) -> List[NintexUser]:
+    id: str | None = None,
+    email: str | None = None,
+    filter: str | None = None,
+    role: str | None = None,
+) -> list[NintexUser]:
     """
     Get Nintex User Data.
     Returns: List of NintexUser pydantic objects.
@@ -127,7 +136,7 @@ def users_list_pd(
     :param role: User's role filter
     """
     usr_dict = users_list(id=id, email=email, filter=filter, role=role)
-    results: List[NintexUser] = []
+    results: list[NintexUser] = []
 
     for user in usr_dict:
         results.append(NintexUser(**user))

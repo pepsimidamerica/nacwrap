@@ -1,13 +1,25 @@
+"""
+Module contains functions for getting info about and interacting with
+workflow instances.
+"""
+
 import json
+import logging
 import os
 from datetime import datetime
-from typing import List, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 import requests
-
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _basic_retry, _fetch_page, _post
-from nacwrap.data_model import *
+from nacwrap.data_model import (
+    InstanceActions,
+    InstanceStartData,
+    NintexInstance,
+    ResolveType,
+)
+
+logger = logging.getLogger(__name__)
 
 
 @_basic_retry
@@ -41,12 +53,16 @@ def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict
         )
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"Error creating instance for {start_data}: {e.response.status_code} - {e.response.content}"
+        )
         raise Exception(
             f"Error creating instance for {start_data}: {e.response.status_code} - {e.response.content}"
         )
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
         raise
     except requests.exceptions.RequestException as e:
+        logger.error(f"Error creating instance for {start_data}: {e}")
         raise Exception(f"Error creating instance for {start_data}: {e}")
 
     return response.json()
@@ -91,12 +107,16 @@ def instance_get(instanceId: str) -> dict:
             response.raise_for_status()
 
         except requests.exceptions.HTTPError as e:
+            logger.error(
+                f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
+            )
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             raise
         except requests.exceptions.RequestException as e:
+            logger.error(f"Error, could not get instance data: {e}")
             raise Exception(f"Error, could not get instance data: {e}")
 
         data = response.json()
@@ -111,52 +131,16 @@ def instance_get_pd(instanceId: str) -> InstanceActions:
     Calls Nintex's 'Get a Workflow Instance' API endpoint.
     Returns data as a pydantic data model.
 
-    :param instanceId: Unuiqe ID of workflow instance to return data for.
+    :param instanceId: Unique ID of workflow instance to return data for.
     """
     instance = instance_get(instanceId=instanceId)
     return InstanceActions(**instance)
 
 
-def get_instance_data(
-    workflow_name: Optional[str] = None,
-    status: Optional[str] = None,
-    order_by: Union[Literal["ASC", "DESC"], None] = None,
-    from_datetime: Optional[datetime] = None,
-    to_datetime: Optional[datetime] = None,
-    page_size: Optional[int] = 100,
-) -> list[dict]:
-    """
-    This method is deprecated and list_instances() should be called directly instead.
-    Wrapper method for calling list_instances().
-
-    Get Nintex instance data Follows nextLink until no more pages.
-    Function goes through all instance data in Nintex.
-
-    Note: If from_datetime and to_datetime are not provided, the Nintex API
-    defaults to returning the last 30 days. If you want everything, you need to
-    explicitly use some sufficiently large time range.
-
-    :param workflow_name: Name of the workflow to filter by
-    :param status: Status of the workflow to filter by
-    :param order_by: Order of the results
-    :param from_datetime: Start date to filter by
-    :param to_datetime: End date to filter by
-    :param page_size: Number of results per page
-    """
-
-    return instances_list(
-        workflow_name=workflow_name,
-        status=status,
-        order_by=order_by,
-        from_datetime=from_datetime,
-        to_datetime=to_datetime,
-        page_size=page_size,
-    )
-
-
 @Decorators.refresh_token
 def instances_list(
     workflow_name: Optional[str] = None,
+    instance_name: str | None = None,
     status: Optional[str] = None,
     order_by: Union[Literal["ASC", "DESC"], None] = None,
     from_datetime: Optional[datetime] = None,
@@ -174,6 +158,7 @@ def instances_list(
     explicitly use some sufficiently large time range.
 
     :param workflow_name: Name of the workflow to filter by
+    :param instance_name: Name of the instance to filter by
     :param status: Status of the workflow to filter by
     :param order_by: Order of the results
     :param from_datetime: Start date to filter by
@@ -187,18 +172,24 @@ def instances_list(
 
     base_url = os.environ["NINTEX_BASE_URL"] + "/workflows/v2/instances"
     params = {
-        # "workflowName": workflow_name,        
         "workflowName": (workflow_name if workflow_name else None),
+        "name": instance_name if instance_name else None,
         "status": status,
         "order": order_by,
         "from": (
             from_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if from_datetime else None
         ),
-        "to": to_datetime.strftime("%Y-%m-%dT23:59:59.0000000Z") if to_datetime else None,
+        "to": to_datetime.strftime("%Y-%m-%dT23:59:59.0000000Z")
+        if to_datetime
+        else None,
         "endDateTimeFrom": (
-            endDateTimeFrom.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if endDateTimeFrom else None
+            endDateTimeFrom.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            if endDateTimeFrom
+            else None
         ),
-        "endDateTimeTo": endDateTimeTo.strftime("%Y-%m-%dT23:59:59.0000000Z") if endDateTimeTo else None,
+        "endDateTimeTo": endDateTimeTo.strftime("%Y-%m-%dT23:59:59.0000000Z")
+        if endDateTimeTo
+        else None,
         "pageSize": page_size,
     }
 
@@ -228,12 +219,16 @@ def instances_list(
             )
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
+            logger.error(
+                f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
+            )
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             raise
         except requests.exceptions.RequestException as e:
+            logger.error(f"Error, could not get instance data: {e}")
             raise Exception(f"Error, could not get instance data: {e}")
 
         data = response.json()
@@ -253,7 +248,7 @@ def instances_list_pd(
     endDateTimeFrom: Optional[datetime] = None,
     endDateTimeTo: Optional[datetime] = None,
     page_size: Optional[int] = 100,
-) -> List[NintexInstance]:
+) -> list[NintexInstance]:
     """
     Get Nintex instance data Follows nextLink until no more pages.
     Returns a list of NintexInstance pydantic objects.
@@ -277,7 +272,7 @@ def instances_list_pd(
         endDateTimeTo=endDateTimeTo,
         page_size=page_size,
     )
-    result: List[NintexInstance] = []
+    result: list[NintexInstance] = []
     for i in instance:
         result.append(NintexInstance(**i))
 
@@ -309,16 +304,23 @@ def instance_resolve(instance_id: str, resolveType: ResolveType, message: str):
         response.raise_for_status()
 
     except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"Error, user not found when resolving instance: {e.response.status_code} - {e.response.content}"
+        )
         raise Exception(
             f"Error, user not found when resolving instance: {e.response.status_code} - {e.response.content}"
         )
 
     except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not resolve instance: {e}")
         raise Exception(f"Error, could not resolve instance: {e}")
 
     if response.status_code != 204:
+        logger.error(
+            f"Error, invalid response code received when resolving instance: {response.status_code} - {response.content}"
+        )
         raise Exception(
-            f"Error, invalid response code received when resolving instance: {e.response.status_code} - {e.response.content}"
+            f"Error, invalid response code received when resolving instance: {response.status_code} - {response.content}"
         )
 
 
@@ -346,11 +348,15 @@ def instance_start_data(instance_id: str):
         response.raise_for_status()
 
     except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"Error, instance not found when retrieving start data: {e.response.status_code} - {e.response.content}"
+        )
         raise Exception(
             f"Error, instance not found when retrieving start data: {e.response.status_code} - {e.response.content}"
         )
 
     except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not get instance start data: {e}")
         raise Exception(f"Error, could not get instance start data: {e}")
 
     data = response.json()

@@ -1,10 +1,10 @@
 """
-Helper functions for ezoff
+Tenacity helper functions
 """
 
-import requests
 import json
 
+import requests
 from tenacity import (
     retry,
     retry_if_exception_type,

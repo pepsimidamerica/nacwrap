@@ -1,6 +1,7 @@
+from datetime import datetime, timedelta, timezone
 from enum import Enum
-from datetime import date, datetime, timezone, timedelta
-from typing import Literal, Optional, Union, List
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -80,7 +81,7 @@ class InstanceActions(BaseModel):
     status: str
     errorMessage: Optional[str] = Field(default=None)
     workflow: Workflow
-    actions: List[Action]
+    actions: list[Action]
 
 
 class NintexInstance(BaseModel):
@@ -105,7 +106,6 @@ class NintexTask(BaseModel):
     """Response Data Model for Nintex Tasks from API Endpoints."""
 
     class TaskAssignment(BaseModel):
-
         class TaskURL(BaseModel):
             formUrl: str
 
@@ -135,10 +135,10 @@ class NintexTask(BaseModel):
     message: str
     modified: datetime
     name: str
-    outcomes: Optional[List[str]] = Field(default=None)
+    outcomes: Optional[list[str]] = Field(default=None)
     status: TaskStatus
     subject: str
-    taskAssignments: List[TaskAssignment]
+    taskAssignments: list[TaskAssignment]
     workflowId: str
     workflowInstanceId: str
     workflowName: str
@@ -181,7 +181,7 @@ class NintexWorkflows(BaseModel):
         lastModified: datetime
 
     # NintexWorkflows Attributes
-    workflows: List[Workflow]
+    workflows: list[Workflow]
 
 
 class InstanceStartData(BaseModel):

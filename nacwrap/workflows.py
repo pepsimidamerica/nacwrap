@@ -2,20 +2,18 @@
 This module contains functions to interact with workflows
 """
 
-import json
+import logging
 import os
-from datetime import datetime
-from typing import Literal, Optional, Union
 
 import requests
-
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _fetch_page, _post
-from nacwrap.data_model import *
-from nacwrap.exceptions import *
+from nacwrap._helpers import _fetch_page
+from nacwrap.data_model import NintexWorkflows
+from nacwrap.exceptions import WorkflowApiError
+
+logger = logging.getLogger(__name__)
 
 
-# TODO List workflows
 @Decorators.refresh_token
 def workflows_list(limit: int = 1000) -> dict:
     """Get Nintex Workflow information.
@@ -37,7 +35,6 @@ def workflows_list(limit: int = 1000) -> dict:
     url = base_url
 
     while url:
-
         try:
             response = _fetch_page(
                 url,
@@ -48,10 +45,14 @@ def workflows_list(limit: int = 1000) -> dict:
             )
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
+            logger.error(
+                f"Error, could not get workflow data: {e.response.status_code} - {e.response.content}"
+            )
             raise WorkflowApiError(
                 f"Error, could not get workflow data: {e.response.status_code} - {e.response.content}"
             )
         except requests.exceptions.RequestException as e:
+            logger.error(f"Error, could not get workflow data: {e}")
             raise WorkflowApiError(f"Error, could not get workflow data: {e}")
 
         data = response.json()
