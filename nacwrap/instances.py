@@ -17,6 +17,7 @@ from nacwrap.data_model import (
     InstanceStartData,
     NintexInstance,
     ResolveType,
+    WorkflowStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -141,7 +142,7 @@ def instance_get_pd(instanceId: str) -> InstanceActions:
 def instances_list(
     workflow_name: Optional[str] = None,
     instance_name: str | None = None,
-    status: Optional[str] = None,
+    status: WorkflowStatus | None = None,
     order_by: Union[Literal["ASC", "DESC"], None] = None,
     from_datetime: Optional[datetime] = None,
     to_datetime: Optional[datetime] = None,
