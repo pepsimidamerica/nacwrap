@@ -24,7 +24,7 @@ from .instances import (
     instances_list,
     instances_list_pd,
 )
-from .tasks import task_delegate, task_search, task_search_pd
+from .tasks import task_complete, task_delegate, task_get, task_search, task_search_pd
 from .users import user_delete, users_list, users_list_pd
 from .workflows import workflows_list, workflows_list_pd
 
@@ -47,7 +47,9 @@ __all__ = [
     "instance_start_data_pd",
     "instances_list",
     "instances_list_pd",
+    "task_complete",
     "task_delegate",
+    "task_get",
     "task_search",
     "task_search_pd",
     "user_delete",

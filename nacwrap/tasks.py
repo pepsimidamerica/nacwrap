@@ -1,5 +1,5 @@
 """
-This module contains functions relating to individual task assignments.
+This module contains functions relating to individual tasks and assignments.
 """
 
 import logging
@@ -8,12 +8,13 @@ from datetime import date
 
 import requests
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _fetch_page, _put
+from nacwrap._helpers import _basic_retry, _fetch_page, _put
 from nacwrap.data_model import NintexTask, TaskStatus
 
 logger = logging.getLogger(__name__)
 
 
+@Decorators.refresh_token
 def task_delegate(assignmentId: str, taskId: str, assignees: list[str], message: str):
     """
     Delegate a Nintex Task to another user.
@@ -179,6 +180,76 @@ def task_search_pd(
     return results
 
 
-# TODO Get a task
+@_basic_retry
+@Decorators.refresh_token
+def task_get(task_id: str) -> dict:
+    """
+    Get the details of a specific task
 
-# TODO Complete a task
+    :param task_id: The unique identifier for the task
+    """
+
+    url = os.environ["NINTEX_BASE_URL"] + f"/workflows/v2/tasks/{task_id}"
+
+    try:
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+        )
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"HTTP Error when getting task: {e.response.status_code} - {e.response.content}"
+        )
+        raise Exception(
+            f"HTTP Error when getting task: {e.response.status_code} - {e.response.content}"
+        )
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not get task: {e}")
+        raise Exception(f"Error, could not get task: {e}")
+
+    return response.json()
+
+
+@Decorators.refresh_token
+def task_complete(task_id: str, assignment_id: str, outcome: str):
+    """
+    Complete a task and specify an outcome.
+    :param task_id: The unique identifier for the task
+    :param assignment_id: The unique identifier for the task assignment
+    :param outcome: Outcome of the task assignment, must match one of the tasks's defined outcomes
+    """
+
+    url = (
+        os.environ["NINTEX_BASE_URL"]
+        + f"/workflows/v2/tasks/{task_id}/assignments/{assignment_id}"
+    )
+
+    try:
+        response = requests.patch(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+            data={"outcome": outcome},
+        )
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"HTTP Error when completing task: {e.response.status_code} - {e.response.content}"
+        )
+        raise Exception(
+            f"HTTP Error when completing task: {e.response.status_code} - {e.response.content}"
+        )
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not complete task: {e}")
+        raise Exception(f"Error, could not complete task: {e}")
+
+    logger.info(f"Response Status: {response.status_code}")
