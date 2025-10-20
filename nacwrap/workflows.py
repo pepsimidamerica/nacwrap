@@ -6,6 +6,7 @@ import logging
 import os
 
 import requests
+
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _fetch_page
 from nacwrap.data_model import NintexWorkflows
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @Decorators.refresh_token
-def workflows_list(limit: int = 1000) -> dict:
+def workflows_list(limit: int = 1000) -> list[dict]:
     """Get Nintex Workflow information.
 
     Args:
@@ -40,6 +41,7 @@ def workflows_list(limit: int = 1000) -> dict:
                 url,
                 headers={
                     "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                    "Accept": "application/json",
                     "Content-Type": "application/json",
                 },
             )
@@ -51,6 +53,8 @@ def workflows_list(limit: int = 1000) -> dict:
             raise WorkflowApiError(
                 f"Error, could not get workflow data: {e.response.status_code} - {e.response.content}"
             )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            raise
         except requests.exceptions.RequestException as e:
             logger.error(f"Error, could not get workflow data: {e}")
             raise WorkflowApiError(f"Error, could not get workflow data: {e}")

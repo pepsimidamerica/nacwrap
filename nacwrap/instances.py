@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Literal, Optional, Union
 
 import requests
+
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _basic_retry, _fetch_page, _post
 from nacwrap.data_model import (

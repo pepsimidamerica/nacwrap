@@ -7,6 +7,7 @@ import os
 from datetime import date
 
 import requests
+
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _basic_retry, _fetch_page, _put
 from nacwrap.data_model import NintexTask, TaskStatus
@@ -40,10 +41,9 @@ def task_delegate(assignmentId: str, taskId: str, assignees: list[str], message:
             url,
             headers={
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
+                "Accept": "application/json",
             },
-            # params=params,
-            data=data,
+            json=data,
         )
         response.raise_for_status()
 
@@ -54,7 +54,8 @@ def task_delegate(assignmentId: str, taskId: str, assignees: list[str], message:
         raise Exception(
             f"HTTP Error when delegating task: {e.response.status_code} - {e.response.content}"
         )
-
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not delegate task: {e}")
         raise Exception(f"Error, could not delegate task: {e}")
@@ -130,7 +131,8 @@ def task_search(
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
             )
-
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            raise
         except requests.exceptions.RequestException as e:
             logger.error(f"Error, could not get instance data: {e}")
             raise Exception(f"Error, could not get instance data: {e}")
@@ -196,7 +198,7 @@ def task_get(task_id: str) -> dict:
             url,
             headers={
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
+                "Accept": "application/json",
             },
         )
         response.raise_for_status()
@@ -208,7 +210,8 @@ def task_get(task_id: str) -> dict:
         raise Exception(
             f"HTTP Error when getting task: {e.response.status_code} - {e.response.content}"
         )
-
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not get task: {e}")
         raise Exception(f"Error, could not get task: {e}")
@@ -235,9 +238,9 @@ def task_complete(task_id: str, assignment_id: str, outcome: str):
             url,
             headers={
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
+                "Accept": "application/json",
             },
-            data={"outcome": outcome},
+            json={"outcome": outcome},
         )
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
@@ -247,7 +250,8 @@ def task_complete(task_id: str, assignment_id: str, outcome: str):
         raise Exception(
             f"HTTP Error when completing task: {e.response.status_code} - {e.response.content}"
         )
-
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not complete task: {e}")
         raise Exception(f"Error, could not complete task: {e}")

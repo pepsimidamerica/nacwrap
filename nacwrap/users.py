@@ -6,6 +6,7 @@ import logging
 import os
 
 import requests
+
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _delete, _fetch_page
 from nacwrap.data_model import NintexUser
@@ -41,7 +42,8 @@ def user_delete(id: str):
         raise Exception(
             f"Error, user not found when deleting: {e.response.status_code} - {e.response.content}"
         )
-
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not get instance data: {e}")
         raise Exception(f"Error, could not get instance data: {e}")
@@ -107,7 +109,8 @@ def users_list(
             raise Exception(
                 f"Error, could not get user data: {e.response.status_code} - {e.response.content}"
             )
-
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            raise
         except requests.exceptions.RequestException as e:
             logger.error(f"Error, could not get user data: {e}")
             raise Exception(f"Error, could not get user data: {e}")
