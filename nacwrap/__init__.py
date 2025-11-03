@@ -23,6 +23,7 @@ from .instances import (
     instance_start_data_pd,
     instances_list,
     instances_list_pd,
+    instance_terminate,
 )
 from .tasks import task_complete, task_delegate, task_get, task_search, task_search_pd
 from .users import user_delete, users_list, users_list_pd
@@ -47,6 +48,7 @@ __all__ = [
     "instance_start_data_pd",
     "instances_list",
     "instances_list_pd",
+    "instance_terminate",
     "task_complete",
     "task_delegate",
     "task_get",
