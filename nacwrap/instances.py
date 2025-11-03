@@ -379,7 +379,7 @@ def instance_start_data_pd(instance_id: str, pydantic_model: InstanceStartData):
     return pydantic_model(**sd)
 
 
-def instance_terminate(self, instance_id: str):
+def instance_terminate(instance_id: str):
     """
     Terminates a specific workflow instance.
 
