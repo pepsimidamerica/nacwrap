@@ -51,8 +51,11 @@ def test_instance_start_data():
     )
     pprint(sd)
 
+def test_term_instance():
+    term = instance_terminate(instance_id='806ea674-1ecc-4bf7-973c-4d4e0a6f4c1c_0_4')
 
 # test_get_instance()
-test_list_instances()
+# test_list_instances()
 # test_instance_start_data()
-pass
+test_term_instance()
+

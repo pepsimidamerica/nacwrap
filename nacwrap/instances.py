@@ -379,6 +379,7 @@ def instance_start_data_pd(instance_id: str, pydantic_model: InstanceStartData):
     return pydantic_model(**sd)
 
 
+@Decorators.refresh_token
 def instance_terminate(instance_id: str):
     """
     Terminates a specific workflow instance.
@@ -397,7 +398,8 @@ def instance_terminate(instance_id: str):
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
                 "Content-Type": "application/json",
             },
-            params={},
+            # params={},
+            data={},
         )
         response.raise_for_status()
 
@@ -413,7 +415,7 @@ def instance_terminate(instance_id: str):
         logger.error(f"Error, could not terminate instance: {e}")
         raise Exception(f"Error, could not terminate instance: {e}")
 
-    if response.status_code != 204:
+    if response.status_code != 200:
         logger.error(
             f"Error, invalid response code received when terminating instance: {response.status_code} - {response.content}"
         )
