@@ -181,17 +181,19 @@ def instances_list(
         "from": (
             from_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if from_datetime else None
         ),
-        "to": to_datetime.strftime("%Y-%m-%dT23:59:59.0000000Z")
-        if to_datetime
-        else None,
+        "to": (
+            to_datetime.strftime("%Y-%m-%dT23:59:59.0000000Z") if to_datetime else None
+        ),
         "endDateTimeFrom": (
             endDateTimeFrom.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
             if endDateTimeFrom
             else None
         ),
-        "endDateTimeTo": endDateTimeTo.strftime("%Y-%m-%dT23:59:59.0000000Z")
-        if endDateTimeTo
-        else None,
+        "endDateTimeTo": (
+            endDateTimeTo.strftime("%Y-%m-%dT23:59:59.0000000Z")
+            if endDateTimeTo
+            else None
+        ),
         "pageSize": page_size,
     }
 
@@ -377,4 +379,44 @@ def instance_start_data_pd(instance_id: str, pydantic_model: InstanceStartData):
     return pydantic_model(**sd)
 
 
-# TODO Delete instance
+def instance_terminate(self, instance_id: str):
+    """
+    Terminates a specific workflow instance.
+
+    :param instance_id: ID of workflow instance to terminate.
+    """
+    url = (
+        os.environ["NINTEX_BASE_URL"]
+        + f"/workflows/v1/instances/{instance_id}/terminate"
+    )
+
+    try:
+        response = _post(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+            params={},
+        )
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"HTTP error when terminating instance: {e.response.status_code} - {e.response.content}"
+        )
+        raise Exception(
+            f"HTTP error when terminating instance: {e.response.status_code} - {e.response.content}"
+        )
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not terminate instance: {e}")
+        raise Exception(f"Error, could not terminate instance: {e}")
+
+    if response.status_code != 204:
+        logger.error(
+            f"Error, invalid response code received when terminating instance: {response.status_code} - {response.content}"
+        )
+        raise Exception(
+            f"Error, invalid response code received when terminating instance: {response.status_code} - {response.content}"
+        )
