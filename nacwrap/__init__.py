@@ -2,6 +2,7 @@
 This module contains functions to interact with the Nintex Workflow Cloud API.
 """
 
+from .connections import connections_list
 from .data_model import (
     InstanceActions,
     InstanceStartData,
@@ -13,6 +14,7 @@ from .data_model import (
     TaskStatus,
     WorkflowStatus,
 )
+from .datasources import datasource_connectors_list, datasources_list
 from .exceptions import WorkflowApiError
 from .instances import (
     create_instance,
@@ -21,9 +23,9 @@ from .instances import (
     instance_resolve,
     instance_start_data,
     instance_start_data_pd,
+    instance_terminate,
     instances_list,
     instances_list_pd,
-    instance_terminate,
 )
 from .tasks import task_complete, task_delegate, task_get, task_search, task_search_pd
 from .users import user_delete, users_list, users_list_pd
@@ -40,7 +42,10 @@ __all__ = [
     "TaskStatus",
     "WorkflowStatus",
     "WorkflowApiError",
+    "connections_list",
     "create_instance",
+    "datasources_list",
+    "datasource_connectors_list",
     "instance_get",
     "instance_get_pd",
     "instance_resolve",

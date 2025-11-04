@@ -10,10 +10,10 @@ load_dotenv()
 
 sys.path.insert(0, "")
 
-from nacwrap import *
+from nacwrap import connections_list, datasource_connectors_list, datasources_list
 
-res = nacwrap.get_instance_data(
-    "Sales Calls", status="Running", from_datetime=datetime.now() - timedelta(days=100)
-)
+res = connections_list()
+res2 = datasources_list()
+res3 = datasource_connectors_list()
 
 pass
