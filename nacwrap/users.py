@@ -6,7 +6,6 @@ import logging
 import os
 
 import requests
-
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _delete, _fetch_page
 from nacwrap.data_model import NintexUser
@@ -15,13 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 @Decorators.refresh_token
-def user_delete(id: str):
+def user_delete(id: str) -> None:
     """
     Delete a single Nintex User.
 
     :param id: Nintex User ID to delete.
     """
-
     url = os.environ["NINTEX_BASE_URL"] + f"/tenants/v1/users/{id}"
 
     try:

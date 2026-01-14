@@ -6,6 +6,7 @@ decorator to it.
 
 import logging
 import os
+from collections.abc import Callable
 from datetime import datetime
 
 import requests
@@ -15,19 +16,21 @@ logger = logging.getLogger(__name__)
 
 class Decorators:
     """
-    Decorators class
+    The Decorators class is used to define functionality for getting
+    and refreshing the Nintex bearer token before each API call.
     """
 
     @staticmethod
-    def refresh_token(decorated):
+    def refresh_token(decorated: Callable) -> Callable:
         """
         Decorator to refresh the access token if it has expired or generate
         a new one if it does not exist.
         """
 
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> Callable:
             """
-            Wrapper function
+            A wrapper function used to check if the bearer token env vars
+            need to be refreshed.
             """
             if "NTX_BEARER_TOKEN_EXPIRES_AT" not in os.environ:
                 expires_at = "01/01/1901 00:00:00"
@@ -44,9 +47,9 @@ class Decorators:
         return wrapper
 
     @staticmethod
-    def get_token():
+    def get_token() -> None:
         """
-        Get Nintex bearer token
+        Get a new Nintex bearer token and set the corresponding environment variables.
         """
         if "NINTEX_BASE_URL" not in os.environ:
             raise Exception("NINTEX_BASE_URL not set in environment")

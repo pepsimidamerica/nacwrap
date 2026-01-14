@@ -7,10 +7,9 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import requests
-
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _basic_retry, _fetch_page, _post
 from nacwrap.data_model import (
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 @_basic_retry
 @Decorators.refresh_token
-def create_instance(workflow_id: str, start_data: Optional[dict] = None) -> dict:
+def create_instance(workflow_id: str, start_data: dict | None = None) -> dict:
     """
     Creates a Nintex workflow instance for a given workflow.
     If successful, returns response which should be a dict containing
@@ -77,7 +76,7 @@ def instance_get(instanceId: str) -> dict:
     Calls Nintex's 'Get a Workflow Instance' API endpoint.
     Returns data as python dictionary.
 
-    :param instanceId: Unuiqe ID of workflow instance to return data for.
+    :param instanceId: Unique ID of workflow instance to return data for.
     """
     base_url = os.environ["NINTEX_BASE_URL"] + f"/workflows/v2/instances/{instanceId}"
     params = {"instanceId": instanceId}
@@ -141,15 +140,15 @@ def instance_get_pd(instanceId: str) -> InstanceActions:
 
 @Decorators.refresh_token
 def instances_list(
-    workflow_name: Optional[str] = None,
+    workflow_name: str | None = None,
     instance_name: str | None = None,
     status: WorkflowStatus | None = None,
-    order_by: Union[Literal["ASC", "DESC"], None] = None,
-    from_datetime: Optional[datetime] = None,
-    to_datetime: Optional[datetime] = None,
-    endDateTimeFrom: Optional[datetime] = None,
-    endDateTimeTo: Optional[datetime] = None,
-    page_size: Optional[int] = 100,
+    order_by: Literal["ASC", "DESC"] | None = None,
+    from_datetime: datetime | None = None,
+    to_datetime: datetime | None = None,
+    endDateTimeFrom: datetime | None = None,
+    endDateTimeTo: datetime | None = None,
+    page_size: int | None = 100,
 ) -> list[dict]:
     """
     Get Nintex instance data Follows nextLink until no more pages.
@@ -244,14 +243,14 @@ def instances_list(
 
 @Decorators.refresh_token
 def instances_list_pd(
-    workflow_name: Optional[str] = None,
-    status: Optional[str] = None,
-    order_by: Union[Literal["ASC", "DESC"], None] = None,
-    from_datetime: Optional[datetime] = None,
-    to_datetime: Optional[datetime] = None,
-    endDateTimeFrom: Optional[datetime] = None,
-    endDateTimeTo: Optional[datetime] = None,
-    page_size: Optional[int] = 100,
+    workflow_name: str | None = None,
+    status: str | None = None,
+    order_by: Literal["ASC", "DESC"] | None = None,
+    from_datetime: datetime | None = None,
+    to_datetime: datetime | None = None,
+    endDateTimeFrom: datetime | None = None,
+    endDateTimeTo: datetime | None = None,
+    page_size: int | None = 100,
 ) -> list[NintexInstance]:
     """
     Get Nintex instance data Follows nextLink until no more pages.
@@ -284,7 +283,7 @@ def instances_list_pd(
 
 
 @Decorators.refresh_token
-def instance_resolve(instance_id: str, resolveType: ResolveType, message: str):
+def instance_resolve(instance_id: str, resolveType: ResolveType, message: str) -> None:
     """
     Resolves a paused workflow instance.
 
@@ -329,7 +328,7 @@ def instance_resolve(instance_id: str, resolveType: ResolveType, message: str):
 
 
 @Decorators.refresh_token
-def instance_start_data(instance_id: str):
+def instance_start_data(instance_id: str) -> dict:
     """
     Returns start data from a specific workflow instance.
 
@@ -363,8 +362,7 @@ def instance_start_data(instance_id: str):
         logger.error(f"Error, could not get instance start data: {e}")
         raise Exception(f"Error, could not get instance start data: {e}")
 
-    data = response.json()
-    return data
+    return response.json()
 
 
 def instance_start_data_pd(instance_id: str, pydantic_model: InstanceStartData):
@@ -374,13 +372,12 @@ def instance_start_data_pd(instance_id: str, pydantic_model: InstanceStartData):
     :param instance_id: ID of instance to return start data for.
     :param pydantic_model: Pydantic model to populate with results returned from Nintex API.
     """
-
     sd = instance_start_data(instance_id=instance_id)
     return pydantic_model(**sd)
 
 
 @Decorators.refresh_token
-def instance_terminate(instance_id: str):
+def instance_terminate(instance_id: str) -> None:
     """
     Terminates a specific workflow instance.
 

@@ -1,5 +1,6 @@
 """
-Tenacity helper functions
+Tenacity helper functions. Used for retrying requests on certain exceptions that we can expect
+are temporary.
 """
 
 import json
@@ -22,9 +23,9 @@ _basic_retry = retry(
 
 
 @_basic_retry
-def _fetch_page(url, headers, params=None, data=None):
+def _fetch_page(url, headers, params=None, data=None) -> requests.Response:
     """
-    Wrapper around requests.get that retries on RequestException
+    Wrapper around requests.get that retries on certain timeout or connection-based exceptions.
     """
     response = requests.get(url, headers=headers, params=params, data=data, timeout=30)
     response.raise_for_status()
@@ -32,7 +33,7 @@ def _fetch_page(url, headers, params=None, data=None):
 
 
 @_basic_retry
-def _delete(url, headers, params=None, data=None):
+def _delete(url, headers, params=None, data=None) -> requests.Response:
     response = requests.delete(
         url, headers=headers, params=params, data=data, timeout=30
     )
@@ -41,7 +42,7 @@ def _delete(url, headers, params=None, data=None):
 
 
 @_basic_retry
-def _put(url, headers, params=None, data=None):
+def _put(url, headers, params=None, data=None) -> requests.Response:
     response = requests.put(
         url, headers=headers, params=params, data=json.dumps(data), timeout=30
     )
@@ -50,7 +51,7 @@ def _put(url, headers, params=None, data=None):
 
 
 @_basic_retry
-def _post(url, headers, params=None, data=None):
+def _post(url, headers, params=None, data=None) -> requests.Response:
     response = requests.post(
         url, headers=headers, params=params, data=json.dumps(data), timeout=30
     )

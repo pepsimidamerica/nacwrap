@@ -1,0 +1,32 @@
+[project]
+name = "nacwrap"
+version = "0.3.4"
+description="Python package that acts as a wrapper for the Nintex Automation Cloud system."
+readme = "README.md"
+authors = [{ name = "Jordan Maynor", email = "jmaynor@pepsimidamerica.com" }]
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.12.5",
+    "requests>=2.32.5",
+    "tenacity>=9.1.2",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: The Unlicense (Unlicense)",
+    "Operating System :: OS Independent",
+]
+license = { file = "LICENSE" }
+
+[project.urls]
+Homepage = "https://github.com/pepsimidamerica/nacwrap"
+
+[build-system]
+requires = ["uv_build>=0.9.4,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "nacwrap"
+module-root = ""
+
+[dependency-groups]
+dev = ["python-dotenv>=1.1.0"]

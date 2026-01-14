@@ -7,7 +7,6 @@ import os
 from datetime import date
 
 import requests
-
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _basic_retry, _fetch_page, _put
 from nacwrap.data_model import NintexTask, TaskStatus
@@ -16,7 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 @Decorators.refresh_token
-def task_delegate(assignmentId: str, taskId: str, assignees: list[str], message: str):
+def task_delegate(
+    assignmentId: str, taskId: str, assignees: list[str], message: str
+) -> None:
     """
     Delegate a Nintex Task to another user.
 
@@ -25,7 +26,6 @@ def task_delegate(assignmentId: str, taskId: str, assignees: list[str], message:
     :param assignees: List of user emails to delegate the task to.
     :param message: Message to include with delegation.
     """
-
     url = (
         os.environ["NINTEX_BASE_URL"]
         + f"/workflows/v2/tasks/{taskId}/assignments/{assignmentId}/delegate"
@@ -186,11 +186,10 @@ def task_search_pd(
 @Decorators.refresh_token
 def task_get(task_id: str) -> dict:
     """
-    Get the details of a specific task
+    Get the details of a specific task.
 
     :param task_id: The unique identifier for the task
     """
-
     url = os.environ["NINTEX_BASE_URL"] + f"/workflows/v2/tasks/{task_id}"
 
     try:
@@ -200,6 +199,7 @@ def task_get(task_id: str) -> dict:
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
                 "Accept": "application/json",
             },
+            timeout=60,
         )
         response.raise_for_status()
 
@@ -220,14 +220,14 @@ def task_get(task_id: str) -> dict:
 
 
 @Decorators.refresh_token
-def task_complete(task_id: str, assignment_id: str, outcome: str):
+def task_complete(task_id: str, assignment_id: str, outcome: str) -> None:
     """
     Complete a task and specify an outcome.
+
     :param task_id: The unique identifier for the task
     :param assignment_id: The unique identifier for the task assignment
     :param outcome: Outcome of the task assignment, must match one of the tasks's defined outcomes
     """
-
     url = (
         os.environ["NINTEX_BASE_URL"]
         + f"/workflows/v2/tasks/{task_id}/assignments/{assignment_id}"
@@ -241,6 +241,7 @@ def task_complete(task_id: str, assignment_id: str, outcome: str):
                 "Accept": "application/json",
             },
             json={"outcome": outcome},
+            timeout=60,
         )
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:

@@ -1,5 +1,6 @@
 """
-Module contains function for getting connection info
+Module contains function for getting connection info. Connections are set up whenever you are
+connecting to a given service for the first time. Third-party connections or custom xtensions.
 """
 
 import logging
@@ -46,5 +47,5 @@ def connections_list() -> list[dict] | None:
 
     if "connections" in data:
         return data["connections"]
-    else:
-        return None
+
+    return None

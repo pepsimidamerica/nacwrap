@@ -1,12 +1,11 @@
 """
-This module contains functions to interact with workflows
+This module contains functions to interact with workflows.
 """
 
 import logging
 import os
 
 import requests
-
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _fetch_page
 from nacwrap.data_model import NintexWorkflows
@@ -17,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 @Decorators.refresh_token
 def workflows_list(limit: int = 1000) -> list[dict]:
-    """Get Nintex Workflow information.
+    """
+    Get Nintex Workflow information.
 
     Args:
         limit (int, optional): Max number of workflows to return. Defaults to 1000.
@@ -28,7 +28,6 @@ def workflows_list(limit: int = 1000) -> list[dict]:
     Returns:
         list[dict]: _description_
     """
-
     base_url = (
         os.environ["NINTEX_BASE_URL"] + f"/workflows/v1/designs/published?limit={limit}"
     )
@@ -67,18 +66,50 @@ def workflows_list(limit: int = 1000) -> list[dict]:
 
 
 def workflows_list_pd(limit: int = 1000) -> NintexWorkflows:
-    """Get Nintex Workflow information.
+    """
+    Get Nintex Workflow information.
     Returns data as a pydantic data model.
 
     Returns:
         NintexWorkflows: Pydantic data model of API response.
     """
-
     workflows = workflows_list(limit=limit)
     return NintexWorkflows(workflows=workflows)
 
 
-# TODO List Workflow permissions
+@Decorators.refresh_token
+def workflow_permissions_list(workflow_id: str) -> dict:
+    """
+    Get the list of all workflow owners of a specific workflow design.
+    """
+    url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}/permissions"
+
+    try:
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Accept": "application/json",
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"HTTP Error when getting permissions: {e.response.status_code} - {e.response.content}"
+        )
+        raise Exception(
+            f"HTTP Error when getting permissions: {e.response.status_code} - {e.response.content}"
+        )
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not get permissions: {e}")
+        raise Exception(f"Error, could not get permissions: {e}")
+
+    return response.json()
+
 
 # TODO Update workflow permissions
 

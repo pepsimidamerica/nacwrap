@@ -1,6 +1,7 @@
 """
 Module contains functions for getting getting data source/data lookup info.
-(API refers to it as datasources, but in the Nintex UI, it's data lookups)
+The API refers to it as "datasources", but in the Nintex UI, it's "data lookups" Not
+sure on the terminology.
 """
 
 import logging
@@ -24,6 +25,7 @@ def datasources_list() -> list[dict] | None:
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
                 "Content-Type": "application/json",
             },
+            timeout=60,
         )
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
@@ -43,8 +45,8 @@ def datasources_list() -> list[dict] | None:
 
     if "datasources" in data:
         return data["datasources"]
-    else:
-        return None
+
+    return None
 
 
 def datasource_connectors_list() -> list[dict] | None:
@@ -60,6 +62,7 @@ def datasource_connectors_list() -> list[dict] | None:
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
                 "Content-Type": "application/json",
             },
+            timeout=60,
         )
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
@@ -79,5 +82,5 @@ def datasource_connectors_list() -> list[dict] | None:
 
     if "contracts" in data:
         return data["contracts"]
-    else:
-        return None
+
+    return None

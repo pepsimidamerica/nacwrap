@@ -1,3 +1,7 @@
+"""
+Data model contains various enums and pydantic models used throughout the rest of the package.
+"""
+
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Optional
@@ -6,14 +10,20 @@ from pydantic import BaseModel, Field
 
 
 class WorkflowStatus(str, Enum):
+    """
+    Represents the state of a given instance of a workflow.
+    """
+
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
     TERMINATED = "terminated"
 
-    # Make values case insensitive when converting string data.
     @classmethod
     def _missing_(cls, value):
+        """
+        If any value is not found, try to match case insensitively. Used when when converting string data.
+        """
         value = value.lower()
         for member in cls:
             if member.lower() == value:
@@ -22,6 +32,10 @@ class WorkflowStatus(str, Enum):
 
 
 class TaskStatus(str, Enum):
+    """
+    Represents the state of a given task assignment.
+    """
+
     ACTIVE = "active"
     ESCALATED = "active-escalated"
     EXPIRED = "expired"
@@ -31,9 +45,11 @@ class TaskStatus(str, Enum):
     PAUSED = "paused"
     ALL = "all"
 
-    # Make values case insensitive when converting string data.
     @classmethod
     def _missing_(cls, value):
+        """
+        If any value is not found, try to match case insensitively. Used when converting string data.
+        """
         value = value.lower()
         for member in cls:
             if member.lower() == value:
@@ -42,12 +58,19 @@ class TaskStatus(str, Enum):
 
 
 class ResolveType(Enum):
+    """
+    When a worklfow instance fails, the instance can be resolved either through
+    retrying the action that caused the failure. Or fully setting the instance to failed.
+    """
+
     RETRY = "1"
     FAIL = "2"
 
 
 class InstanceActions(BaseModel):
-    """Response Data Model for 'Get a Workflow Instance' API Endpoint."""
+    """
+    Response Data Model for 'Get a Workflow Instance' API Endpoint.
+    """
 
     class Workflow(BaseModel):
         id: str
@@ -85,6 +108,11 @@ class InstanceActions(BaseModel):
 
 
 class NintexInstance(BaseModel):
+    """
+    Represents a particular instance of a workflow. Includes core info of the workflow,
+    when it was started, who by, and its status.
+    """
+
     class StartEvent(BaseModel):
         eventType: str  # Optional[str] = Field(default=None)
 
@@ -103,7 +131,9 @@ class NintexInstance(BaseModel):
 
 
 class NintexTask(BaseModel):
-    """Response Data Model for Nintex Tasks from API Endpoints."""
+    """
+    Response Data Model for Nintex Tasks from API Endpoints.
+    """
 
     class TaskAssignment(BaseModel):
         class TaskURL(BaseModel):
@@ -149,15 +179,16 @@ class NintexTask(BaseModel):
 
     @property
     def supports_multiple_users(self) -> bool:
-        """Returns true if task was created by the assign a task to multiple users action."""
-        if self.taskAssignments[0].urls is None:
-            return False
-        else:
-            return True
+        """
+        Returns true if task was created by the assign a task to multiple users action.
+        """
+        return self.taskAssignments[0].urls is not None
 
 
 class NintexUser(BaseModel):
-    """Response Data Model for Nintex Users from API Endpoints."""
+    """
+    Response Data Model for Nintex Users from API Endpoints.
+    """
 
     id: str
     email: str
@@ -169,11 +200,16 @@ class NintexUser(BaseModel):
 
     @property
     def name(self):
+        """
+        Returns full name of user.
+        """
         return self.firstName + " " + self.lastName
 
 
 class NintexWorkflows(BaseModel):
-    """Response Data Model for Nintex Workflows API Endpoints."""
+    """
+    Response Data Model for Nintex Workflows API Endpoints.
+    """
 
     class Workflow(BaseModel):
         id: str
@@ -185,4 +221,8 @@ class NintexWorkflows(BaseModel):
 
 
 class InstanceStartData(BaseModel):
+    """
+    Generic start data for an instance. Varies workflow-to-workflow.
+    """
+
     pass
