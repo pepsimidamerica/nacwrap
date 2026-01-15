@@ -489,6 +489,83 @@ def workflow_import(
 
 # TODO Import a packaged workflow
 
-# TODO Get workflow dependencies
 
-# TODO Publish a workflow configuration
+@Decorators.refresh_token
+def workflow_dependencies_return(
+    workflow_id: str, workflow_status: Literal["published", "draft"] | None = None
+) -> dict:
+    """
+    Get a list of the connections, component workflows, tables, externally-configurable
+    variables, and start event configurations that are used in a workflow.
+
+    Use this with the Import a workflow operation to select alternate dependencies
+    in the target tenant, or with the Publish a workflow operation to publish a
+    new configuration of the workflow.
+    """
+    url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}/dependencyConfig"
+
+    params = None
+    if workflow_status:
+        params = {"workflowStatus": workflow_status}
+
+    try:
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Accept": "application/json",
+            },
+            params=params,
+            timeout=60,
+        )
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"HTTP Error getting workflow dependencies: {e.response.status_code} - {e.response.content}"
+        )
+        raise Exception(
+            f"HTTP Error when getting workflow dependencies: {e.response.status_code} - {e.response.content}"
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not get workflow dependencies: {e}")
+        raise Exception(f"Error, could not get workflow dependencies: {e}") from e
+
+    return response.json()
+
+
+@Decorators.refresh_token
+def workflow_publish_config(workflow_id: str, dependency_config: dict) -> dict:
+    """
+    Update a workflow's dependencies to change which connections,
+    component workflows, tables, externally-configurable variables,
+    or start event configurations the workflow uses, and publish the updated workflow.
+    """
+    url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}/dependencyConfig"
+
+    try:
+        response = requests.put(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Accept": "application/json",
+            },
+            json=dependency_config,
+            timeout=60,
+        )
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"HTTP Error updating workflow dependencies: {e.response.status_code} - {e.response.content}"
+        )
+        raise Exception(
+            f"HTTP Error when updating workflow dependencies: {e.response.status_code} - {e.response.content}"
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not update workflow dependencies: {e}")
+        raise Exception(f"Error, could not update workflow dependencies: {e}") from e
+
+    return response.json()
