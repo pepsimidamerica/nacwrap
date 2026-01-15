@@ -28,6 +28,7 @@ def connections_list() -> list[dict] | None:
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
                 "Content-Type": "application/json",
             },
+            timeout=60,
         )
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
@@ -36,12 +37,12 @@ def connections_list() -> list[dict] | None:
         )
         raise Exception(
             f"Error, could not get connection data: {e.response.status_code} - {e.response.content}"
-        )
+        ) from e
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
         raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not get connection data: {e}")
-        raise Exception(f"Error, could not get connection data: {e}")
+        raise Exception(f"Error, could not get connection data: {e}") from e
 
     data = response.json()
 

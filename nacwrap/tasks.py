@@ -53,12 +53,12 @@ def task_delegate(
         )
         raise Exception(
             f"HTTP Error when delegating task: {e.response.status_code} - {e.response.content}"
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not delegate task: {e}")
-        raise Exception(f"Error, could not delegate task: {e}")
+        raise Exception(f"Error, could not delegate task: {e}") from e
 
     logger.info(f"Response Status: {response.status_code}")
 
@@ -130,12 +130,12 @@ def task_search(
             )
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
-            )
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            ) from e
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             raise
         except requests.exceptions.RequestException as e:
             logger.error(f"Error, could not get instance data: {e}")
-            raise Exception(f"Error, could not get instance data: {e}")
+            raise Exception(f"Error, could not get instance data: {e}") from e
 
         data = response.json()
         results += data["tasks"]
@@ -209,12 +209,12 @@ def task_get(task_id: str) -> dict:
         )
         raise Exception(
             f"HTTP Error when getting task: {e.response.status_code} - {e.response.content}"
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not get task: {e}")
-        raise Exception(f"Error, could not get task: {e}")
+        raise Exception(f"Error, could not get task: {e}") from e
 
     return response.json()
 
@@ -250,11 +250,11 @@ def task_complete(task_id: str, assignment_id: str, outcome: str) -> None:
         )
         raise Exception(
             f"HTTP Error when completing task: {e.response.status_code} - {e.response.content}"
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not complete task: {e}")
-        raise Exception(f"Error, could not complete task: {e}")
+        raise Exception(f"Error, could not complete task: {e}") from e
 
     logger.info(f"Response Status: {response.status_code}")

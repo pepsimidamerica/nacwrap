@@ -34,12 +34,12 @@ def datasources_list() -> list[dict] | None:
         )
         raise Exception(
             f"Error, could not get data source data: {e.response.status_code} - {e.response.content}"
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not get data source data: {e}")
-        raise Exception(f"Error, could not get data source data: {e}")
+        raise Exception(f"Error, could not get data source data: {e}") from e
 
     data = response.json()
 
@@ -71,12 +71,12 @@ def datasource_connectors_list() -> list[dict] | None:
         )
         raise Exception(
             f"Error, could not get data source data: {e.response.status_code} - {e.response.content}"
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not get data source data: {e}")
-        raise Exception(f"Error, could not get data source data: {e}")
+        raise Exception(f"Error, could not get data source data: {e}") from e
 
     data = response.json()
 

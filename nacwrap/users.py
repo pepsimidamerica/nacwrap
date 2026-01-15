@@ -39,12 +39,12 @@ def user_delete(id: str) -> None:
         )
         raise Exception(
             f"Error, user not found when deleting: {e.response.status_code} - {e.response.content}"
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not get instance data: {e}")
-        raise Exception(f"Error, could not get instance data: {e}")
+        raise Exception(f"Error, could not get instance data: {e}") from e
 
     if response.status_code != 204:
         logger.error(
@@ -106,13 +106,12 @@ def users_list(
             )
             raise Exception(
                 f"Error, could not get user data: {e.response.status_code} - {e.response.content}"
-            )
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            ) from e
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             raise
         except requests.exceptions.RequestException as e:
             logger.error(f"Error, could not get user data: {e}")
-            raise Exception(f"Error, could not get user data: {e}")
-
+            raise Exception(f"Error, could not get user data: {e}") from e
         data = response.json()
         results += data["users"]
 

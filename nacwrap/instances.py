@@ -59,12 +59,12 @@ def create_instance(workflow_id: str, start_data: dict | None = None) -> dict:
         )
         raise Exception(
             f"Error creating instance for {start_data}: {e.response.status_code} - {e.response.content}"
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         raise
     except requests.exceptions.RequestException as e:
         logger.error(f"Error creating instance for {start_data}: {e}")
-        raise Exception(f"Error creating instance for {start_data}: {e}")
+        raise Exception(f"Error creating instance for {start_data}: {e}") from e
 
     return response.json()
 
@@ -113,12 +113,12 @@ def instance_get(instanceId: str) -> dict:
             )
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
-            )
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            ) from e
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             raise
         except requests.exceptions.RequestException as e:
             logger.error(f"Error, could not get instance data: {e}")
-            raise Exception(f"Error, could not get instance data: {e}")
+            raise Exception(f"Error, could not get instance data: {e}") from e
 
         data = response.json()
         results = {**results, **data}
@@ -227,12 +227,12 @@ def instances_list(
             )
             raise Exception(
                 f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
-            )
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            ) from e
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             raise
         except requests.exceptions.RequestException as e:
             logger.error(f"Error, could not get instance data: {e}")
-            raise Exception(f"Error, could not get instance data: {e}")
+            raise Exception(f"Error, could not get instance data: {e}") from e
 
         data = response.json()
         results += data["instances"]
@@ -312,11 +312,10 @@ def instance_resolve(instance_id: str, resolveType: ResolveType, message: str) -
         )
         raise Exception(
             f"Error, user not found when resolving instance: {e.response.status_code} - {e.response.content}"
-        )
-
+        ) from e
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not resolve instance: {e}")
-        raise Exception(f"Error, could not resolve instance: {e}")
+        raise Exception(f"Error, could not resolve instance: {e}") from e
 
     if response.status_code != 204:
         logger.error(
@@ -356,11 +355,11 @@ def instance_start_data(instance_id: str) -> dict:
         )
         raise Exception(
             f"Error, instance not found when retrieving start data: {e.response.status_code} - {e.response.content}"
-        )
+        ) from e
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not get instance start data: {e}")
-        raise Exception(f"Error, could not get instance start data: {e}")
+        raise Exception(f"Error, could not get instance start data: {e}") from e
 
     return response.json()
 
@@ -406,11 +405,11 @@ def instance_terminate(instance_id: str) -> None:
         )
         raise Exception(
             f"HTTP error when terminating instance: {e.response.status_code} - {e.response.content}"
-        )
+        ) from e
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Error, could not terminate instance: {e}")
-        raise Exception(f"Error, could not terminate instance: {e}")
+        raise Exception(f"Error, could not terminate instance: {e}") from e
 
     if response.status_code != 200:
         logger.error(
