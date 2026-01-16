@@ -409,7 +409,56 @@ def workflow_export(
     return response.json()
 
 
-# TODO Export packaged draft/published worfklow
+@Decorators.refresh_token
+def workflow_export_packaged(workflow_id: str, use_published: bool) -> bytes | None:
+    """
+    Export a workflow and its dependency configuration as a packaged archive to
+    import into another tenant.
+
+    Note: The structure of the body would imply that multiple workflow are supported,
+    but that doesn't seem to be the case from testing. Just one at a time.
+
+    :param workflow_id: The ID of the workflow to export.
+    :type workflow_id: str
+    :param use_published: Whether to pull the published version of a workflow. If not, pull draft version.
+    :type use_published: bool
+    :return: The content of the exported package as bytes if successful, otherwise None.
+    :rtype: bytes | None
+    """
+    url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/package/export"
+
+    try:
+        response = requests.post(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Content-Type": "application/json",
+            },
+            timeout=60,
+            json={"workflows": [{"id": workflow_id, "usePublished": use_published}]},
+        )
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"HTTP Error exporting worklfow: {e.response.status_code} - {e.response.content}"
+        )
+        raise Exception(
+            f"HTTP Error when exporting workflow: {e.response.status_code} - {e.response.content}"
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not export worklfow: {e}")
+        raise Exception(f"Error, could not export workflow: {e}") from e
+
+    # Check if response in expected .zip file formatting
+    if (
+        response.status_code == 200
+        and response.headers.get("Content-Type") == "application/zip"
+    ):
+        return response.content
+
+    return None
 
 
 @Decorators.refresh_token
@@ -487,7 +536,72 @@ def workflow_import(
     return response.json()
 
 
-# TODO Import a packaged workflow
+@Decorators.refresh_token
+def workflow_import_packaged(
+    name: str,
+    workflow_deployment_package: bytes,
+    assigned_use: Literal["Production", "Devlopment"] | None = None,
+    clear_var_defaults: bool | None = None,
+    overwrite_existing: bool | None = None,
+    publish_when_configured: bool | None = None,
+) -> dict:
+    """
+    Import a workflow deployment package into a tenant. The deployment package contains
+    the workflow and its dependency configuration.
+
+    Workflows are imported as drafts by default. You can automatically publish the
+    workflow after the import if its dependencies are fully configured.
+
+    :param name: The name to give to the imported workflow.
+    :type name: str
+    :param workflow_deployment_package: TODO Not sure of format yet
+    :type workflow_deployment_package: TODO Not sure of format yet
+    :param assigned_use: Whether the workflow is intended for production of development use.
+    :type assigned_use: Literal["Production", "Development"], optional
+    :param clear_var_defaults: Set to true to import the workflow with no default values for configurable variables. By default, the imported workflow uses the default values defined in the exported workflow. If a workflowDependencyConfiguration is supplied, this parameter is ignored and the imported workflow uses the default values defined in the supplied workflowDependencyConfiguration.
+    :type clear_var_defaults: bool, optional
+    :param overwrite_existing: Set to true to import this workflow as a draft version of an existing workflow with the same name. If there is no workflow with the provided name in the tenant, the operation fails with an HTTP 400 error.
+    :type overwrite_existing: bool, optional
+    :param publish_when_configured: Set to true to automatically publish the workflow once it is fully configured. Otherwise will be imported as a draft.
+    :type publish_when_configured: bool, optional
+    """
+    url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/package/import"
+
+    params = {"name": name}
+    if assigned_use:
+        params["assignedUse"] = assigned_use
+    if clear_var_defaults is not None:
+        params["clearVariableDefaultValues"] = clear_var_defaults
+    if overwrite_existing is not None:
+        params["overwriteExisting"] = overwrite_existing
+    if publish_when_configured is not None:
+        params["publishWhenConfigured"] = publish_when_configured
+
+    try:
+        response = requests.post(
+            url,
+            headers={
+                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
+                "Accept": "application/json",
+            },
+            timeout=60,
+            params=params,
+            files=workflow_deployment_package,
+        )
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            f"HTTP Error importing worklfow: {e.response.status_code} - {e.response.content}"
+        )
+        raise Exception(
+            f"HTTP Error when importing workflow: {e.response.status_code} - {e.response.content}"
+        ) from e
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        raise
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error, could not import worklfow: {e}")
+        raise Exception(f"Error, could not import workflow: {e}") from e
+
+    return response.json()
 
 
 @Decorators.refresh_token
