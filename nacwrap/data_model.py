@@ -66,6 +66,7 @@ class InstanceActions(BaseModel):
         endDateTime: Optional[datetime] = Field(default=None)
         errorMessage: Optional[str] = Field(default=None)
         logMessage: Optional[str] = Field(default=None)
+        status: Optional[str] = Field(default=None)
 
         @property
         def age(self) -> timedelta:
@@ -121,7 +122,6 @@ class NintexTask(BaseModel):
         updatedDate: datetime
         escalatedTo: Optional[str] = Field(default=None)
         urls: Optional[TaskURL] = Field(default=None)
-        status: Optional[str] = Field(default=None)
 
     # Task Attributes
     assignmentBehavior: str
