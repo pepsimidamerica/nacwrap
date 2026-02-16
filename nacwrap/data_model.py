@@ -121,6 +121,7 @@ class NintexTask(BaseModel):
         updatedDate: datetime
         escalatedTo: Optional[str] = Field(default=None)
         urls: Optional[TaskURL] = Field(default=None)
+        status: Optional[str] = Field(default=None)
 
     # Task Attributes
     assignmentBehavior: str
