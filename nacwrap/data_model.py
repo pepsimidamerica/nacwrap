@@ -84,6 +84,31 @@ class InstanceActions(BaseModel):
     workflow: Workflow
     actions: list[Action]
 
+    def action_is_running(self, action_instance_id: str) -> bool:
+        """Looks for actions matching action_instance_id that are completed. Some actions are listed as completed
+        by another entry in the Actions list of the instance, while the first instance of the action is still in a status of running.
+
+        Args:
+            actions (List[InstanceActions.Action]): List of workflow instance's actions.
+            action_instance_id (str): Action ID to search for.
+
+        Returns:
+            bool: True if action was completed.
+        """
+        for action in self.actions:
+            if (
+                action.actionInstanceId == action_instance_id
+                and action.status == "Completed"
+            ):
+                return False
+
+        if action_instance_id not in [act.actionInstanceId for act in self.actions]:
+            raise ValueError(
+                "Action instance ID passed to action_is_running() does not exist in list of actions."
+            )
+
+        return True
+
 
 class NintexInstance(BaseModel):
     class StartEvent(BaseModel):
