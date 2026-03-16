@@ -6,9 +6,8 @@ connecting to a given service for the first time. Third-party connections or cus
 import logging
 import os
 
-import requests
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _basic_retry
+from nacwrap._helpers import _basic_retry, _get_ntx_headers, _make_request
 
 logger = logging.getLogger(__name__)
 
@@ -21,28 +20,12 @@ def connections_list() -> list[dict] | None:
     """
     url = os.environ["NINTEX_BASE_URL"] + "/workflows/v1/connections"
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"Error, could not get connection data: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"Error, could not get connection data: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get connection data: {e}")
-        raise Exception(f"Error, could not get connection data: {e}") from e
+    response = _make_request(
+        method="GET",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="get connections list",
+    )
 
     data = response.json()
 
