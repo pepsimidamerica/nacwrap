@@ -8,7 +8,12 @@ from datetime import date
 
 import requests
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _basic_retry, _fetch_page, _put
+from nacwrap._helpers import (
+    _basic_retry,
+    _fetch_page,
+    _get_ntx_headers,
+    _make_request,
+)
 from nacwrap.data_model import NintexTask, TaskStatus
 
 logger = logging.getLogger(__name__)
@@ -16,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 @Decorators.refresh_token
 def task_delegate(
-    assignmentId: str, taskId: str, assignees: list[str], message: str
+    assignmentId: str, taskId: str, assignees: list[str], message: str = ""
 ) -> None:
     """
     Delegate a Nintex Task to another user.
@@ -30,37 +35,14 @@ def task_delegate(
         os.environ["NINTEX_BASE_URL"]
         + f"/workflows/v2/tasks/{taskId}/assignments/{assignmentId}/delegate"
     )
-    params = {"assignmentId": assignmentId, "taskId": taskId}
-    data = {"assignees": assignees, "message": message}
 
-    # Remove None values
-    params = {k: v for k, v in params.items() if v is not None}
-
-    try:
-        response = _put(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            json=data,
-        )
-        response.raise_for_status()
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error when delegating task: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when delegating task: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not delegate task: {e}")
-        raise Exception(f"Error, could not delegate task: {e}") from e
-
-    logger.info(f"Response Status: {response.status_code}")
+    _make_request(
+        method="PUT",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="task delegate",
+        json={"assignees": assignees, "message": message},
+    )
 
 
 @Decorators.refresh_token

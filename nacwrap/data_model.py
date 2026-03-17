@@ -3,13 +3,13 @@ Data model contains various enums and pydantic models used throughout the rest o
 """
 
 from datetime import datetime, timedelta, timezone
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
-class WorkflowStatus(str, Enum):
+class WorkflowStatus(StrEnum):
     """
     Represents the state of a given instance of a workflow.
     """
@@ -31,7 +31,7 @@ class WorkflowStatus(str, Enum):
         return None
 
 
-class TaskStatus(str, Enum):
+class TaskStatus(StrEnum):
     """
     Represents the state of a given task assignment.
     """

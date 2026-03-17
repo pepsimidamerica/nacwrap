@@ -7,7 +7,7 @@ sure on the terminology.
 import logging
 import os
 
-import requests
+from nacwrap._helpers import _get_ntx_headers, _make_request
 
 logger = logging.getLogger(__name__)
 
@@ -18,28 +18,12 @@ def datasources_list() -> list[dict] | None:
     """
     url = os.environ["NINTEX_BASE_URL"] + "/workflows/v1/datasources"
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"Error, could not get data source data: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"Error, could not get data source data: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get data source data: {e}")
-        raise Exception(f"Error, could not get data source data: {e}") from e
+    response = _make_request(
+        method="GET",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="get datasources list",
+    )
 
     data = response.json()
 
@@ -55,28 +39,12 @@ def datasource_connectors_list() -> list[dict] | None:
     """
     url = os.environ["NINTEX_BASE_URL"] + "/workflows/v1/datasources/contracts"
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"Error, could not get data source data: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"Error, could not get data source data: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get data source data: {e}")
-        raise Exception(f"Error, could not get data source data: {e}") from e
+    response = _make_request(
+        method="GET",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="get datasource connectors list",
+    )
 
     data = response.json()
 
