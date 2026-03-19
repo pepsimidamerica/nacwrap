@@ -9,16 +9,12 @@ import os
 from datetime import datetime
 from typing import Literal
 
-import requests
 from nacwrap._auth import Decorators
 from nacwrap._helpers import (
-    _basic_retry,
     _check_env,
-    _fetch_page,
     _get_ntx_headers,
     _get_paginated,
     _make_request,
-    _post,
 )
 from nacwrap.data_model import (
     InstanceActions,
@@ -62,7 +58,6 @@ def create_instance(workflow_id: str, start_data: dict | None = None) -> dict:
     return response.json()
 
 
-@_basic_retry
 @Decorators.refresh_token
 def instance_get(instanceId: str) -> dict:
     """

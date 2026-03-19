@@ -10,8 +10,14 @@ load_dotenv()
 
 sys.path.insert(0, "")
 
-from nacwrap import WorkflowStatus, instances_list_pd
+from nacwrap import (
+    create_instance,
+    instance_resolve,
+    instance_terminate,
+    instances_list,
+    instances_list_pd,
+)
 
-res = instances_list_pd(workflow_name="Form 279", status=WorkflowStatus.RUNNING)
+res = instances_list(workflow_name="Sales Calls")
 
 pass

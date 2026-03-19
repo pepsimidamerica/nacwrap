@@ -7,12 +7,11 @@ import logging
 import os
 
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _basic_retry, _get_ntx_headers, _make_request
+from nacwrap._helpers import _get_ntx_headers, _make_request
 
 logger = logging.getLogger(__name__)
 
 
-@_basic_retry
 @Decorators.refresh_token
 def connections_list() -> list[dict] | None:
     """

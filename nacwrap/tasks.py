@@ -6,12 +6,10 @@ import logging
 import os
 from datetime import date
 
-import requests
 from nacwrap._auth import Decorators
 from nacwrap._helpers import (
-    _basic_retry,
-    _fetch_page,
     _get_ntx_headers,
+    _get_paginated,
     _make_request,
 )
 from nacwrap.data_model import NintexTask, TaskStatus
@@ -83,45 +81,13 @@ def task_search(
     # Remove None values
     params = {k: v for k, v in params.items() if v is not None}
 
-    results = []
-    url = base_url
-    first_request = True
-
-    while url:
-        # If this is subsequent requests, don't need to pass params
-        # will be provided in the skip URL
-        if first_request:
-            first_request = False
-        else:
-            params = None
-
-        try:
-            response = _fetch_page(
-                url,
-                headers={
-                    "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                    "Content-Type": "application/json",
-                },
-                params=params,
-            )
-            response.raise_for_status()
-
-        except requests.exceptions.HTTPError as e:
-            logger.error(
-                f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
-            )
-            raise Exception(
-                f"Error, could not get instance data: {e.response.status_code} - {e.response.content}"
-            ) from e
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            raise
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error, could not get instance data: {e}")
-            raise Exception(f"Error, could not get instance data: {e}") from e
-
-        data = response.json()
-        results += data["tasks"]
-        url = data.get("nextLink")
+    results = _get_paginated(
+        url=base_url,
+        pagination_value="tasks",
+        headers=_get_ntx_headers(),
+        params=params,
+        context="task search",
+    )
 
     return results
 
@@ -157,14 +123,10 @@ def task_search_pd(
         dt_from=dt_from,
         dt_to=dt_to,
     )
-    results: list[NintexTask] = []
-    for task in task_dict:
-        results.append(NintexTask(**task))
 
-    return results
+    return [NintexTask(**task) for task in task_dict]
 
 
-@_basic_retry
 @Decorators.refresh_token
 def task_get(task_id: str) -> dict:
     """
@@ -174,29 +136,13 @@ def task_get(task_id: str) -> dict:
     """
     url = os.environ["NINTEX_BASE_URL"] + f"/workflows/v2/tasks/{task_id}"
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error when getting task: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when getting task: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get task: {e}")
-        raise Exception(f"Error, could not get task: {e}") from e
+    response = _make_request(
+        "GET",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="get task",
+        success_status_codes=[200],
+    )
 
     return response.json()
 
@@ -215,28 +161,13 @@ def task_complete(task_id: str, assignment_id: str, outcome: str) -> None:
         + f"/workflows/v2/tasks/{task_id}/assignments/{assignment_id}"
     )
 
-    try:
-        response = requests.patch(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            json={"outcome": outcome},
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error when completing task: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when completing task: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not complete task: {e}")
-        raise Exception(f"Error, could not complete task: {e}") from e
+    response = _make_request(
+        "PATCH",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="complete task",
+        json={"outcome": outcome},
+        success_status_codes=[204],  # TODO Verify code once I get a task I can complete
+    )
 
     logger.info(f"Response Status: {response.status_code}")

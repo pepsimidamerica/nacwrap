@@ -6,11 +6,9 @@ import logging
 import os
 from typing import Literal
 
-import requests
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _fetch_page
+from nacwrap._helpers import _get_ntx_headers, _get_paginated, _make_request
 from nacwrap.data_model import NintexWorkflows
-from nacwrap.exceptions import WorkflowApiError
 
 logger = logging.getLogger(__name__)
 
@@ -25,39 +23,14 @@ def workflows_list(limit: int = 1000) -> list[dict]:
     :return: list of workflows
     :rtype: list[dict]
     """
-    base_url = (
-        os.environ["NINTEX_BASE_URL"] + f"/workflows/v1/designs/published?limit={limit}"
+    base_url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/published"
+    params = {"limit": limit}
+    results = _get_paginated(
+        url=base_url,
+        params=params,
+        pagination_value="workflows",
+        headers=_get_ntx_headers(),
     )
-    results = []
-    url = base_url
-
-    while url:
-        try:
-            response = _fetch_page(
-                url,
-                headers={
-                    "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                },
-            )
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            logger.error(
-                f"Error, could not get workflow data: {e.response.status_code} - {e.response.content}"
-            )
-            raise WorkflowApiError(
-                f"Error, could not get workflow data: {e.response.status_code} - {e.response.content}"
-            ) from e
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            raise
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error, could not get workflow data: {e}")
-            raise WorkflowApiError(f"Error, could not get workflow data: {e}") from e
-
-        data = response.json()
-        results += data["workflows"]
-        url = data.get("nextLink")
 
     return results
 
@@ -88,29 +61,13 @@ def workflow_permissions_list(workflow_id: str) -> dict:
     """
     url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}/permissions"
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error when getting permissions: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when getting permissions: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get permissions: {e}")
-        raise Exception(f"Error, could not get permissions: {e}") from e
+    response = _make_request(
+        method="GET",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="get workflow permissions",
+        success_status_codes=[200],
+    )
 
     return response.json()
 
@@ -129,30 +86,14 @@ def workflow_permissions_update(workflow_id: str, permissions: list[dict]) -> No
     """
     url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}/permissions"
 
-    try:
-        response = requests.put(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            json={"permissions": permissions},
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error when updating permissions: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when updating permissions: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not update permissions: {e}")
-        raise Exception(f"Error, could not update permissions: {e}") from e
+    _make_request(
+        method="PUT",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="update workflow permissions",
+        success_status_codes=[200],
+        json={"permissions": permissions},
+    )
 
 
 @Decorators.refresh_token
@@ -167,29 +108,13 @@ def workflow_design_return(workflow_id: str) -> dict:
     """
     url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}"
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error when getting workflow design: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when getting workflow design: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get worklfow design: {e}")
-        raise Exception(f"Error, could not get workflow design: {e}") from e
+    response = _make_request(
+        method="GET",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="get workflow design",
+        success_status_codes=[200],
+    )
 
     return response.json()
 
@@ -212,28 +137,13 @@ def workflow_delete(workflow_id: str, draft_only: bool = False) -> None:
     if draft_only:
         url += "/draft"
 
-    try:
-        response = requests.delete(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error when deleting workflow: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when deleting workflow: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not delete workflow: {e}")
-        raise Exception(f"Error, could not delete workflow: {e}") from e
+    _make_request(
+        method="DELETE",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="delete workflow",
+        success_status_codes=[200],
+    )
 
 
 @Decorators.refresh_token
@@ -252,28 +162,13 @@ def workflow_pause(workflow_id: str) -> None:
         f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}/deactivate"
     )
 
-    try:
-        response = requests.post(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error when pausing workflow: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when pausing workflow: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not pause workflow: {e}")
-        raise Exception(f"Error, could not pause workflow: {e}") from e
+    _make_request(
+        method="POST",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="pause workflow",
+        success_status_codes=[200, 204],
+    )
 
 
 @Decorators.refresh_token
@@ -289,28 +184,13 @@ def workflow_unpause(workflow_id: str) -> None:
     """
     url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}/activate"
 
-    try:
-        response = requests.post(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error when unpausing workflow: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when unpausing workflow: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not unpause workflow: {e}")
-        raise Exception(f"Error, could not unpause workflow: {e}") from e
+    _make_request(
+        method="POST",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="unpause workflow",
+        success_status_codes=[200, 204],
+    )
 
 
 @Decorators.refresh_token
@@ -331,30 +211,14 @@ def workflow_add_tags(workflow_id: str, tags: list[dict]) -> None:
     """
     url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}/tags"
 
-    try:
-        response = requests.put(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            timeout=60,
-            json={"tags": tags},
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error when adding tags: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when adding tags: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not add tags: {e}")
-        raise Exception(f"Error, could not add tags: {e}") from e
+    _make_request(
+        method="PUT",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="add tags",
+        success_status_codes=[200, 204],
+        json={"tags": tags},
+    )
 
 
 @Decorators.refresh_token
@@ -383,28 +247,13 @@ def workflow_export(
     # instead of making it its own thing below. The general purpose is the same. The only
     # difference is what URl you hit and what formatting your request takes.
 
-    try:
-        response = requests.post(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error exporting worklfow: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when exporting workflow: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not export worklfow: {e}")
-        raise Exception(f"Error, could not export workflow: {e}") from e
+    response = _make_request(
+        method="POST",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="export workflow",
+        success_status_codes=[200],
+    )
 
     return response.json()
 
@@ -427,35 +276,17 @@ def workflow_export_packaged(workflow_id: str, use_published: bool) -> bytes | N
     """
     url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/package/export"
 
-    try:
-        response = requests.post(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
-            },
-            timeout=60,
-            json={"workflows": [{"id": workflow_id, "usePublished": use_published}]},
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error exporting worklfow: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when exporting workflow: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not export worklfow: {e}")
-        raise Exception(f"Error, could not export workflow: {e}") from e
+    response = _make_request(
+        method="POST",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="export workflow",
+        success_status_codes=[200],
+        json={"workflows": [{"id": workflow_id, "usePublished": use_published}]},
+    )
 
     # Check if response in expected .zip file formatting
-    if (
-        response.status_code == 200
-        and response.headers.get("Content-Type") == "application/zip"
-    ):
+    if response.headers.get("Content-Type") == "application/zip":
         return response.content
 
     return None
@@ -508,30 +339,14 @@ def workflow_import(
 
     # TODO Consider folding in packaged import into one func, rather than creating its own.
 
-    try:
-        response = requests.post(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            timeout=60,
-            json=data,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error importing worklfow: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when importing workflow: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not import worklfow: {e}")
-        raise Exception(f"Error, could not import workflow: {e}") from e
+    response = _make_request(
+        method="POST",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="import workflow",
+        success_status_codes=[200],
+        json=data,
+    )
 
     return response.json()
 
@@ -540,7 +355,7 @@ def workflow_import(
 def workflow_import_packaged(
     name: str,
     workflow_deployment_package: bytes,
-    assigned_use: Literal["Production", "Devlopment"] | None = None,
+    assigned_use: Literal["Production", "Development"] | None = None,
     clear_var_defaults: bool | None = None,
     overwrite_existing: bool | None = None,
     publish_when_configured: bool | None = None,
@@ -577,29 +392,15 @@ def workflow_import_packaged(
     if publish_when_configured is not None:
         params["publishWhenConfigured"] = publish_when_configured
 
-    try:
-        response = requests.post(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            timeout=60,
-            params=params,
-            files=workflow_deployment_package,
-        )
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error importing worklfow: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when importing workflow: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not import worklfow: {e}")
-        raise Exception(f"Error, could not import workflow: {e}") from e
+    response = _make_request(
+        method="POST",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="import workflow",
+        success_status_codes=[200],
+        params=params,
+        files=workflow_deployment_package,
+    )
 
     return response.json()
 
@@ -622,29 +423,14 @@ def workflow_dependencies_return(
     if workflow_status:
         params = {"workflowStatus": workflow_status}
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            params=params,
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error getting workflow dependencies: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when getting workflow dependencies: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get workflow dependencies: {e}")
-        raise Exception(f"Error, could not get workflow dependencies: {e}") from e
+    response = _make_request(
+        method="GET",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="get workflow dependencies",
+        success_status_codes=[200],
+        params=params,
+    )
 
     return response.json()
 
@@ -658,28 +444,13 @@ def workflow_publish_config(workflow_id: str, dependency_config: dict) -> dict:
     """
     url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}/dependencyConfig"
 
-    try:
-        response = requests.put(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Accept": "application/json",
-            },
-            json=dependency_config,
-            timeout=60,
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"HTTP Error updating workflow dependencies: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"HTTP Error when updating workflow dependencies: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not update workflow dependencies: {e}")
-        raise Exception(f"Error, could not update workflow dependencies: {e}") from e
+    response = _make_request(
+        method="PUT",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="update workflow dependencies",
+        success_status_codes=[200],
+        json=dependency_config,
+    )
 
     return response.json()

@@ -5,9 +5,8 @@ This module contains functions relating to user management.
 import logging
 import os
 
-import requests
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _delete, _fetch_page
+from nacwrap._helpers import _get_ntx_headers, _get_paginated, _make_request
 from nacwrap.data_model import NintexUser
 
 logger = logging.getLogger(__name__)
@@ -22,37 +21,13 @@ def user_delete(id: str) -> None:
     """
     url = os.environ["NINTEX_BASE_URL"] + f"/tenants/v1/users/{id}"
 
-    try:
-        response = _delete(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
-            },
-            params={},
-        )
-        response.raise_for_status()
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"Error, user not found when deleting: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"Error, user not found when deleting: {e.response.status_code} - {e.response.content}"
-        ) from e
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get instance data: {e}")
-        raise Exception(f"Error, could not get instance data: {e}") from e
-
-    if response.status_code != 204:
-        logger.error(
-            f"Error, invalid response code received when deleting user: {response.status_code} - {response.content}"
-        )
-        raise Exception(
-            f"Error, invalid response code received when deleting user: {response.status_code} - {response.content}"
-        )
+    _make_request(
+        method="DELETE",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="delete user",
+        success_status_codes=[204],
+    )
 
 
 @Decorators.refresh_token
@@ -66,56 +41,25 @@ def users_list(
     Get Nintex User Data.
     Returns: List of Dictionaries.
 
-    :param id: User's ID filter
+    :param ids: One or more user IDs to filter by
     :param email: User's email filter
     :param filter: User's name or email filter
     :param role: User's role filter
     """
     base_url = os.environ["NINTEX_BASE_URL"] + "/tenants/v1/users"
-    params = {"id": id, "email": email, "filter": filter, "role": role}
+
+    params = {"id[]": id, "email[]": email, "filter": filter, "role[]": role}
 
     # Remove None values
     params = {k: v for k, v in params.items() if v is not None}
 
-    results = []
-    url = base_url
-    first_request = True
-
-    while url:
-        # If this is subsequent requests, don't need to pass params
-        # will be provided in the skip URL
-        if first_request:
-            first_request = False
-        else:
-            params = None
-
-        try:
-            response = _fetch_page(
-                url,
-                headers={
-                    "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                    "Content-Type": "application/json",
-                },
-                params=params,
-            )
-            response.raise_for_status()
-
-        except requests.exceptions.HTTPError as e:
-            logger.error(
-                f"Error, could not get user data: {e.response.status_code} - {e.response.content}"
-            )
-            raise Exception(
-                f"Error, could not get user data: {e.response.status_code} - {e.response.content}"
-            ) from e
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            raise
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error, could not get user data: {e}")
-            raise Exception(f"Error, could not get user data: {e}") from e
-        data = response.json()
-        results += data["users"]
-
-        url = data.get("nextLink")
+    results = _get_paginated(
+        url=base_url,
+        pagination_value="users",
+        headers=_get_ntx_headers(),
+        context="get users",
+        params=params,
+    )
 
     return results
 
@@ -136,9 +80,5 @@ def users_list_pd(
     :param role: User's role filter
     """
     usr_dict = users_list(id=id, email=email, filter=filter, role=role)
-    results: list[NintexUser] = []
 
-    for user in usr_dict:
-        results.append(NintexUser(**user))
-
-    return results
+    return [NintexUser(**user) for user in usr_dict]

@@ -7,11 +7,13 @@ sure on the terminology.
 import logging
 import os
 
+from nacwrap._auth import Decorators
 from nacwrap._helpers import _get_ntx_headers, _make_request
 
 logger = logging.getLogger(__name__)
 
 
+@Decorators.refresh_token
 def datasources_list() -> list[dict] | None:
     """
     Get a list of Xtensions data lookups.
@@ -33,6 +35,7 @@ def datasources_list() -> list[dict] | None:
     return None
 
 
+@Decorators.refresh_token
 def datasource_connectors_list() -> list[dict] | None:
     """
     Get a list of connectors compatible with Xtensions data lookups.
