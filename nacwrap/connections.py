@@ -8,12 +8,13 @@ import os
 
 from nacwrap._auth import Decorators
 from nacwrap._helpers import _get_ntx_headers, _make_request
+from nacwrap.data_model import Connection
 
 logger = logging.getLogger(__name__)
 
 
 @Decorators.refresh_token
-def connections_list() -> list[dict] | None:
+def connections_list() -> list[Connection] | None:
     """
     Get a list of Xtensions connections.
     """
@@ -29,6 +30,6 @@ def connections_list() -> list[dict] | None:
     data = response.json()
 
     if "connections" in data:
-        return data["connections"]
+        return [Connection(**conn) for conn in data["connections"]]
 
     return None
