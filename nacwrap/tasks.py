@@ -42,6 +42,7 @@ def task_delegate(assignmentId: str, taskId: str, assignees: list[str], message:
             headers={
                 "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
                 "Accept": "application/json",
+                "Content-Type": "application/json",
             },
             json=data,
         )
