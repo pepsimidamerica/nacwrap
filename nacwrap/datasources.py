@@ -1,83 +1,57 @@
 """
 Module contains functions for getting getting data source/data lookup info.
-(API refers to it as datasources, but in the Nintex UI, it's data lookups)
+The API refers to it as "datasources", but in the Nintex UI, it's "data lookups" Not
+sure on the terminology.
 """
 
 import logging
 import os
 
-import requests
+from nacwrap._auth import Decorators
+from nacwrap._helpers import _get_ntx_headers, _make_request
 
 logger = logging.getLogger(__name__)
 
 
+@Decorators.refresh_token
 def datasources_list() -> list[dict] | None:
     """
     Get a list of Xtensions data lookups.
     """
     url = os.environ["NINTEX_BASE_URL"] + "/workflows/v1/datasources"
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
-            },
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"Error, could not get data source data: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"Error, could not get data source data: {e.response.status_code} - {e.response.content}"
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get data source data: {e}")
-        raise Exception(f"Error, could not get data source data: {e}")
+    response = _make_request(
+        method="GET",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="get datasources list",
+    )
 
     data = response.json()
 
     if "datasources" in data:
         return data["datasources"]
-    else:
-        return None
+
+    return None
 
 
+@Decorators.refresh_token
 def datasource_connectors_list() -> list[dict] | None:
     """
     Get a list of connectors compatible with Xtensions data lookups.
     """
     url = os.environ["NINTEX_BASE_URL"] + "/workflows/v1/datasources/contracts"
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
-            },
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"Error, could not get data source data: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"Error, could not get data source data: {e.response.status_code} - {e.response.content}"
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get data source data: {e}")
-        raise Exception(f"Error, could not get data source data: {e}")
+    response = _make_request(
+        method="GET",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="get datasource connectors list",
+    )
 
     data = response.json()
 
     if "contracts" in data:
         return data["contracts"]
-    else:
-        return None
+
+    return None

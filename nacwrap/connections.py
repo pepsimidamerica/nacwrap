@@ -1,50 +1,35 @@
 """
-Module contains function for getting connection info
+Module contains function for getting connection info. Connections are set up whenever you are
+connecting to a given service for the first time. Third-party connections or custom xtensions.
 """
 
 import logging
 import os
 
-import requests
 from nacwrap._auth import Decorators
-from nacwrap._helpers import _basic_retry
+from nacwrap._helpers import _get_ntx_headers, _make_request
+from nacwrap.data_model import Connection
 
 logger = logging.getLogger(__name__)
 
 
-@_basic_retry
 @Decorators.refresh_token
-def connections_list() -> list[dict] | None:
+def connections_list() -> list[Connection] | None:
     """
     Get a list of Xtensions connections.
     """
     url = os.environ["NINTEX_BASE_URL"] + "/workflows/v1/connections"
 
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "Authorization": "Bearer " + os.environ["NTX_BEARER_TOKEN"],
-                "Content-Type": "application/json",
-            },
-        )
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            f"Error, could not get connection data: {e.response.status_code} - {e.response.content}"
-        )
-        raise Exception(
-            f"Error, could not get connection data: {e.response.status_code} - {e.response.content}"
-        )
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error, could not get connection data: {e}")
-        raise Exception(f"Error, could not get connection data: {e}")
+    response = _make_request(
+        method="GET",
+        url=url,
+        headers=_get_ntx_headers(),
+        context="get connections list",
+    )
 
     data = response.json()
 
     if "connections" in data:
-        return data["connections"]
-    else:
-        return None
+        return [Connection(**conn) for conn in data["connections"]]
+
+    return None
