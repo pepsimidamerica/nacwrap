@@ -20,12 +20,14 @@ logger = logging.getLogger(__name__)
 _basic_retry = retry(
     stop=stop_after_attempt(5),
     wait=wait_exponential(multiplier=1, min=4, max=10),
-    before=print('HTTP request failed. Retrying...'),
-    retry=retry_if_exception_type((requests.exceptions.ConnectionError, 
-         requests.exceptions.Timeout, 
-         requests.exceptions.RequestException, 
-         requests.exceptions.HTTPError
-         )
+    # before=print("HTTP request failed. Retrying..."),
+    retry=retry_if_exception_type(
+        (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout,
+            requests.exceptions.RequestException,
+            requests.exceptions.HTTPError,
+        )
     ),
 )
 
