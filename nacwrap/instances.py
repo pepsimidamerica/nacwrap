@@ -52,7 +52,7 @@ def create_instance(workflow_id: str, start_data: dict | None = None) -> dict:
         url=url,
         headers=_get_ntx_headers(),
         context="creating instance",
-        data=json.dumps({"startData": start_data or {}}),
+        json={"startData": start_data or {}},
     )
 
     return response.json()
