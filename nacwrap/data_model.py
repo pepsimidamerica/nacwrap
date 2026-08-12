@@ -112,7 +112,8 @@ class InstanceActions(BaseModel):
     actions: list[Action]
 
     def action_is_running(self, action_instance_id: str) -> bool:
-        """Looks for actions matching action_instance_id that are completed. Some actions are listed as completed
+        """
+        Looks for actions matching action_instance_id that are completed. Some actions are listed as completed
         by another entry in the Actions list of the instance, while the first instance of the action is still in a status of running.
 
         Args:
@@ -121,6 +122,7 @@ class InstanceActions(BaseModel):
 
         Returns:
             bool: True if action was completed.
+
         """
         for action in self.actions:
             if (

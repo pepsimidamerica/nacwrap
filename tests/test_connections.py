@@ -24,6 +24,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from nacwrap.connections import connections_list
+from nacwrap.data_model import Connection
 
 
 class TestConnectionsList:
@@ -75,7 +76,7 @@ class TestConnectionsList:
         with patch("nacwrap.connections._make_request", return_value=mock_response):
             result = connections_list()
 
-        assert result == fake_connections
+        assert result == [Connection(**conn) for conn in fake_connections]
 
     def test_returns_empty_list_when_connections_key_is_empty(self) -> None:
         """

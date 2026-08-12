@@ -8,10 +8,16 @@ import logging
 import os
 from collections.abc import Callable
 from datetime import datetime
+from functools import wraps
+from typing import ParamSpec, TypeVar
 
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 
 class Decorators:
@@ -21,13 +27,19 @@ class Decorators:
     """
 
     @staticmethod
-    def refresh_token(decorated: Callable) -> Callable:
+    def refresh_token(decorated: Callable[_P, _R]) -> Callable[_P, _R]:
         """
         Decorator to refresh the access token if it has expired or generate
         a new one if it does not exist.
+
+        :param decorated: The callable to decorate.
+        :type decorated: Callable
+        :return: The wrapped callable with token refresh logic.
+        :rtype: Callable
         """
 
-        def wrapper(*args, **kwargs) -> Callable:
+        @wraps(decorated)
+        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
             """
             A wrapper function used to check if the bearer token env vars
             need to be refreshed.
@@ -43,7 +55,6 @@ class Decorators:
                 Decorators.get_token()
             return decorated(*args, **kwargs)
 
-        wrapper.__name__ = decorated.__name__
         return wrapper
 
     @staticmethod
@@ -60,13 +71,12 @@ class Decorators:
         if "NINTEX_GRANT_TYPE" not in os.environ:
             raise Exception("NINTEX_GRANT_TYPE not set in environment")
 
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
         response = requests.post(
             os.environ["NINTEX_BASE_URL"] + "/authentication/v1/token",
-            headers=headers,
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
             data={
                 "client_id": os.environ["NINTEX_CLIENT_ID"],
                 "client_secret": os.environ["NINTEX_CLIENT_SECRET"],
@@ -78,9 +88,9 @@ class Decorators:
             os.environ["NTX_BEARER_TOKEN"] = response.json()["access_token"]
         except Exception as e:
             logger.error(f"Error, could not set OS env bearer token: {e}")
-            raise Exception(f"Error, could not set OS env bearer token: {e}")
+            raise Exception(f"Error, could not set OS env bearer token: {e}") from e
         try:
             os.environ["NTX_EXPIRES_AT"] = response.json()["expires_at"]
         except Exception as e:
             logger.error(f"Error, could not set os env expires at: {e}")
-            raise Exception(f"Error, could not set os env expires at: {e}")
+            raise Exception(f"Error, could not set os env expires at: {e}") from e

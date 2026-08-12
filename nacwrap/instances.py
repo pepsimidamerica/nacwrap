@@ -3,7 +3,6 @@ Module contains functions for getting info about and interacting with
 workflow instances.
 """
 
-import json
 import logging
 import os
 from datetime import datetime
