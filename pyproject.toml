@@ -1,6 +1,6 @@
 [project]
 name = "nacwrap"
-version = "1.2"
+version = "1.3"
 description = "Python package that acts as a wrapper for the Nintex Automation Cloud system."
 readme = "README.md"
 authors = [{ name = "Jordan Maynor", email = "jmaynor@pepsimidamerica.com" }]

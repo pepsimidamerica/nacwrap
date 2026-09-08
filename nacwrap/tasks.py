@@ -167,7 +167,10 @@ def task_complete(task_id: str, assignment_id: str, outcome: str) -> None:
         headers=_get_ntx_headers(),
         context="complete task",
         json={"outcome": outcome},
-        success_status_codes=[204],  # TODO Verify code once I get a task I can complete
+        success_status_codes=[
+            200,
+            204,
+        ],
     )
 
     logger.info(f"Response Status: {response.status_code}")
