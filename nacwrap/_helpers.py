@@ -73,8 +73,8 @@ def _make_request(
         )
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
-        logger.error(f"HTTP {e.response.status_code} error, {context}: {e}")
-        raise Exception(f"HTTP {e.response.status_code} error, {context}: {e}") from e
+        logger.error(f"HTTP {response.status_code} error, {context}: {e}")
+        raise Exception(f"HTTP {response.status_code} error, {context}: {e}") from e
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
         logger.error(f"Connection error during {context}: {e}")
         raise
