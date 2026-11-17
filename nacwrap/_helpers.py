@@ -6,7 +6,7 @@ are temporary.
 import logging
 import os
 
-import requests
+import httpx2
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -23,10 +23,8 @@ _basic_retry = retry(
     # before=print("HTTP request failed. Retrying..."),
     retry=retry_if_exception_type(
         (
-            requests.exceptions.ConnectionError,
-            requests.exceptions.Timeout,
-            requests.exceptions.RequestException,
-            requests.exceptions.HTTPError,
+            httpx2.NetworkError,
+            httpx2.TimeoutException,
         )
     ),
 )
@@ -40,11 +38,11 @@ def _make_request(
     context: str,
     success_status_codes: list[int] | None = None,
     **kwargs,
-) -> requests.Response:
+) -> httpx2.Response:
     """
     Generic HTTP request handler with consistent error handling.
 
-    Wraps requests.request() with standardized error handling,
+    Wraps httpx2.request() with standardized error handling,
     logging, and timeout management.
 
     :param method: HTTP method (GET, POST, PATCH, DELETE, etc.)
@@ -57,28 +55,29 @@ def _make_request(
     :type context: str
     :param success_status_codes: List of status codes that are considered a successful response. If None, just returns the response to the calling function without checking the status code.
     :type success_status_codes: list[int] | None
-    :param kwargs: Additional arguments passed to requests.request()
+    :param kwargs: Additional arguments passed to httpx2.request()
                    (json, data, params, timeout, etc.)
     :return: Response object
-    :rtype: requests.Response
+    :rtype: httpx2.Response
     :raises Exception: For HTTP errors or general request failures
     """
     try:
-        response = requests.request(
+        response = httpx2.request(
             method,
             url,
             headers=headers,
             timeout=kwargs.pop("timeout", 60),
+            follow_redirects=True,
             **kwargs,
         )
         response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
+    except httpx2.HTTPStatusError as e:
         logger.error(f"HTTP {response.status_code} error, {context}: {e}")
         raise Exception(f"HTTP {response.status_code} error, {context}: {e}") from e
-    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+    except (httpx2.NetworkError, httpx2.TimeoutException) as e:
         logger.error(f"Connection error during {context}: {e}")
         raise
-    except requests.exceptions.RequestException as e:
+    except httpx2.HTTPError as e:
         logger.error(f"Request error during {context}: {e}")
         raise Exception(f"Request error during {context}: {e}") from e
 
@@ -142,9 +141,9 @@ def _get_paginated(
             response = _make_request(
                 method="GET", url=url, headers=headers, context=context, params=params
             )
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+        except (httpx2.NetworkError, httpx2.TimeoutException):
             raise
-        except requests.exceptions.RequestException as e:
+        except httpx2.HTTPError as e:
             raise Exception(f"Pagination failed during {context}: {e}") from e
 
         data = response.json()

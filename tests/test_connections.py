@@ -13,7 +13,7 @@ Key ideas used throughout this file:
           that call and return whatever we want, keeping tests fast and offline.
 
 2.  MagicMock() — a flexible stand-in object. Calling .json() on a real
-    requests.Response returns a dict; MagicMock lets us configure exactly what
+    httpx2.Response returns a dict; MagicMock lets us configure exactly what
     that dict looks like via `mock_response.json.return_value = {...}`.
 
 3.  Environment variables are handled by the `nintex_env_vars` fixture in

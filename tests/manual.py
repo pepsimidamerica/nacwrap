@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+
 from nacwrap import instances_list
 
 load_dotenv()

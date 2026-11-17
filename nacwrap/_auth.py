@@ -11,7 +11,7 @@ from datetime import datetime
 from functools import wraps
 from typing import ParamSpec, TypeVar
 
-import requests
+import httpx2
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ class Decorators:
         if "NINTEX_GRANT_TYPE" not in os.environ:
             raise NintexAuthError("NINTEX_GRANT_TYPE not set in environment")
 
-        response = requests.post(
+        response = httpx2.post(
             os.environ["NINTEX_BASE_URL"] + "/authentication/v1/token",
             headers={
                 "Accept": "application/json",
@@ -93,7 +93,7 @@ class Decorators:
             },
             timeout=30,
         )
-        if not response.ok:
+        if not response.is_success:
             msg = (
                 f"Nintex token request failed ({response.status_code}): {response.text}"
             )

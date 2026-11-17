@@ -2,7 +2,7 @@
 Data model contains various enums and pydantic models used throughout the rest of the package.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum, StrEnum
 
 from pydantic import BaseModel, Field
@@ -98,7 +98,7 @@ class InstanceActions(BaseModel):
             Returns the age of the action based on its start date.
             """
             if self.startDateTime:
-                return datetime.now(timezone.utc) - self.startDateTime
+                return datetime.now(UTC) - self.startDateTime
 
             return timedelta(days=0)
 
@@ -210,7 +210,7 @@ class NintexTask(BaseModel):
         """
         Returns the age of the task based on its created date.
         """
-        return datetime.now(timezone.utc) - self.createdDate
+        return datetime.now(UTC) - self.createdDate
 
     @property
     def supports_multiple_users(self) -> bool:
