@@ -8,25 +8,61 @@ import os
 
 import httpx2
 from tenacity import (
+    RetryCallState,
     retry,
-    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
 
+from nacwrap.exceptions import WorkflowApiError
+
 PAGE_NEXT_LINK = "nextLink"
+IDEMPOTENT_METHODS = {"GET", "HEAD", "OPTIONS", "PUT", "DELETE"}
+RETRY_STATUS_CODES = {500, 502, 503, 504}
 
 logger = logging.getLogger(__name__)
+
+
+def _should_retry(retry_state: RetryCallState) -> bool:
+    """
+    Decide whether a failed _make_request call is safe to retry.
+
+    Anything that failed before the request reached Nintex (connection errors,
+    connect/pool timeouts, 429) is always retried. Failures where Nintex may have
+    already acted on the request (read/write timeouts, 5xx) are only retried for
+    idempotent methods, so e.g. a timed out POST never creates a duplicate instance.
+
+    :param retry_state: Tenacity state for the current call.
+    :type retry_state: RetryCallState
+    :return: True if the call should be retried.
+    :rtype: bool
+    """
+    exc = retry_state.outcome.exception() if retry_state.outcome else None
+    if exc is None:
+        return False
+
+    method = retry_state.kwargs.get("method") or retry_state.args[0]
+    idempotent = method.upper() in IDEMPOTENT_METHODS
+
+    if isinstance(
+        exc, (httpx2.ConnectError, httpx2.ConnectTimeout, httpx2.PoolTimeout)
+    ):
+        return True
+    if isinstance(exc, (httpx2.NetworkError, httpx2.TimeoutException)):
+        return idempotent
+    if isinstance(exc, WorkflowApiError):
+        return exc.status_code == 429 or (
+            idempotent and exc.status_code in RETRY_STATUS_CODES
+        )
+    return False
+
+
+# ignores Retry-After on 429
 _basic_retry = retry(
     stop=stop_after_attempt(5),
     wait=wait_exponential(multiplier=1, min=4, max=10),
-    # before=print("HTTP request failed. Retrying..."),
-    retry=retry_if_exception_type(
-        (
-            httpx2.NetworkError,
-            httpx2.TimeoutException,
-        )
-    ),
+    retry=_should_retry,
+    reraise=True,
 )
 
 
@@ -59,7 +95,9 @@ def _make_request(
                    (json, data, params, timeout, etc.)
     :return: Response object
     :rtype: httpx2.Response
-    :raises Exception: For HTTP errors or general request failures
+    :raises WorkflowApiError: For HTTP error statuses or general request failures
+    :raises httpx2.NetworkError: For connection failures, after retries
+    :raises httpx2.TimeoutException: For timeouts, after retries
     """
     try:
         response = httpx2.request(
@@ -72,25 +110,24 @@ def _make_request(
         )
         response.raise_for_status()
     except httpx2.HTTPStatusError as e:
-        logger.error(f"HTTP {response.status_code} error, {context}: {e}")
-        raise Exception(f"HTTP {response.status_code} error, {context}: {e}") from e
+        msg = f"HTTP {response.status_code} error, {context}: {e}"
+        logger.error(msg)
+        raise WorkflowApiError(msg, status_code=response.status_code) from e
     except (httpx2.NetworkError, httpx2.TimeoutException) as e:
         logger.error(f"Connection error during {context}: {e}")
         raise
     except httpx2.HTTPError as e:
-        logger.error(f"Request error during {context}: {e}")
-        raise Exception(f"Request error during {context}: {e}") from e
+        msg = f"Request error during {context}: {e}"
+        logger.error(msg)
+        raise WorkflowApiError(msg) from e
 
     if (
         success_status_codes is not None
         and response.status_code not in success_status_codes
     ):
-        logger.error(
-            f"Error during {context}: {response.status_code} - {response.content}"
-        )
-        raise Exception(
-            f"Error during {context}: {response.status_code} - {response.content}"
-        )
+        msg = f"Error during {context}: {response.status_code} - {response.content}"
+        logger.error(msg)
+        raise WorkflowApiError(msg, status_code=response.status_code)
 
     return response
 
@@ -137,14 +174,9 @@ def _get_paginated(
     all_results = []
 
     while True:
-        try:
-            response = _make_request(
-                method="GET", url=url, headers=headers, context=context, params=params
-            )
-        except (httpx2.NetworkError, httpx2.TimeoutException):
-            raise
-        except httpx2.HTTPError as e:
-            raise Exception(f"Pagination failed during {context}: {e}") from e
+        response = _make_request(
+            method="GET", url=url, headers=headers, context=context, params=params
+        )
 
         data = response.json()
         all_results.extend(data.get(pagination_value, []))

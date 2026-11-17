@@ -99,7 +99,7 @@ def instance_get_pd(instanceId: str) -> InstanceActions:
 def instances_list(
     workflow_name: str | None = None,
     instance_name: str | None = None,
-    status: WorkflowStatus | None = None,
+    status: WorkflowStatus | str | None = None,
     order_by: Literal["ASC", "DESC"] | None = None,
     from_datetime: datetime | None = None,
     to_datetime: datetime | None = None,
@@ -126,7 +126,7 @@ def instances_list(
     :param page_size: Number of results per page
     """
     if status is not None:
-        status = status.value
+        status = WorkflowStatus(status).value
 
     base_url = os.environ["NINTEX_BASE_URL"] + "/workflows/v2/instances"
     params = {
@@ -170,7 +170,8 @@ def instances_list(
 @Decorators.refresh_token
 def instances_list_pd(
     workflow_name: str | None = None,
-    status: str | None = None,
+    instance_name: str | None = None,
+    status: WorkflowStatus | str | None = None,
     order_by: Literal["ASC", "DESC"] | None = None,
     from_datetime: datetime | None = None,
     to_datetime: datetime | None = None,
@@ -183,6 +184,7 @@ def instances_list_pd(
     Returns a list of NintexInstance pydantic objects.
 
     :param workflow_name: Name of the workflow to filter by.
+    :param instance_name: Name of the instance to filter by.
     :param status: Status of the workflow to filter by.
     :param order_by: Order of the results.
     :param from_datetime: Begin date to filter intance start date.
@@ -193,6 +195,7 @@ def instances_list_pd(
     """
     instance = instances_list(
         workflow_name=workflow_name,
+        instance_name=instance_name,
         status=status,
         order_by=order_by,
         from_datetime=from_datetime,

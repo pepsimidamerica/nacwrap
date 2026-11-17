@@ -2,7 +2,7 @@
 Data model contains various enums and pydantic models used throughout the rest of the package.
 """
 
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import Enum, StrEnum
 
 from pydantic import BaseModel, Field
@@ -86,6 +86,7 @@ class InstanceActions(BaseModel):
         name: str
         label: str
         type: str
+        status: str | None = Field(default=None)
         parentId: str | None = Field(default=None)
         startDateTime: datetime | None = Field(default=None)
         endDateTime: datetime | None = Field(default=None)

@@ -239,9 +239,9 @@ def workflow_export(
     url = f"{os.environ['NINTEX_BASE_URL']}/workflows/v1/designs/{workflow_id}"
 
     if workflow_type == "draft":
-        url += "draft/export"
+        url += "/draft/export"
     if workflow_type == "published":
-        url += "published/export"
+        url += "/published/export"
 
     # TODO Consider just adding in the export package worklfow function
     # instead of making it its own thing below. The general purpose is the same. The only

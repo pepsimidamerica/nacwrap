@@ -7,7 +7,7 @@ decorator to it.
 import logging
 import os
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from functools import wraps
 from typing import ParamSpec, TypeVar
 
@@ -50,13 +50,15 @@ class Decorators:
             A wrapper function used to check if the bearer token env vars
             need to be refreshed.
             """
+            # Nintex returns ISO 8601 UTC, e.g. "2026-11-17T20:13:14.883Z".
+            # Refresh a minute early so a token can't expire mid-request.
             expires_at = os.environ.get(
-                "NTX_BEARER_TOKEN_EXPIRES_AT", "01/01/1901 00:00:00"
+                "NTX_BEARER_TOKEN_EXPIRES_AT", "1901-01-01T00:00:00Z"
             )
             try:
-                expired = (
-                    datetime.strptime(expires_at, "%m/%d/%Y %H:%M:%S") < datetime.now()
-                )
+                expired = datetime.fromisoformat(expires_at) - timedelta(
+                    minutes=1
+                ) < datetime.now(UTC)
             except ValueError:
                 logger.warning(f"Unparseable token expiry {expires_at!r}, refreshing")
                 expired = True

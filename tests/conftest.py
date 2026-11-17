@@ -33,4 +33,4 @@ def nintex_env_vars(monkeypatch) -> None:
     monkeypatch.setenv("NINTEX_GRANT_TYPE", "client_credentials")
     # Set an expiry far in the future so the @refresh_token decorator never
     # tries to make a real token request during tests.
-    monkeypatch.setenv("NTX_BEARER_TOKEN_EXPIRES_AT", "01/01/2099 00:00:00")
+    monkeypatch.setenv("NTX_BEARER_TOKEN_EXPIRES_AT", "2099-01-01T00:00:00Z")
