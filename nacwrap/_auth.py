@@ -20,6 +20,12 @@ _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
+class NintexAuthError(Exception):
+    """
+    Raised when a Nintex bearer token cannot be obtained.
+    """
+
+
 class Decorators:
     """
     The Decorators class is used to define functionality for getting
@@ -44,14 +50,17 @@ class Decorators:
             A wrapper function used to check if the bearer token env vars
             need to be refreshed.
             """
-            if "NTX_BEARER_TOKEN_EXPIRES_AT" not in os.environ:
-                expires_at = "01/01/1901 00:00:00"
-            else:
-                expires_at = os.environ["NTX_BEARER_TOKEN_EXPIRES_AT"]
-            if (
-                "NTX_BEARER_TOKEN" not in os.environ
-                or datetime.strptime(expires_at, "%m/%d/%Y %H:%M:%S") < datetime.now()
-            ):
+            expires_at = os.environ.get(
+                "NTX_BEARER_TOKEN_EXPIRES_AT", "01/01/1901 00:00:00"
+            )
+            try:
+                expired = (
+                    datetime.strptime(expires_at, "%m/%d/%Y %H:%M:%S") < datetime.now()
+                )
+            except ValueError:
+                logger.warning(f"Unparseable token expiry {expires_at!r}, refreshing")
+                expired = True
+            if "NTX_BEARER_TOKEN" not in os.environ or expired:
                 Decorators.get_token()
             return decorated(*args, **kwargs)
 
@@ -63,13 +72,13 @@ class Decorators:
         Get a new Nintex bearer token and set the corresponding environment variables.
         """
         if "NINTEX_BASE_URL" not in os.environ:
-            raise Exception("NINTEX_BASE_URL not set in environment")
+            raise NintexAuthError("NINTEX_BASE_URL not set in environment")
         if "NINTEX_CLIENT_ID" not in os.environ:
-            raise Exception("NINTEX_CLIENT_ID not set in environment")
+            raise NintexAuthError("NINTEX_CLIENT_ID not set in environment")
         if "NINTEX_CLIENT_SECRET" not in os.environ:
-            raise Exception("NINTEX_CLIENT_SECRET not set in environment")
+            raise NintexAuthError("NINTEX_CLIENT_SECRET not set in environment")
         if "NINTEX_GRANT_TYPE" not in os.environ:
-            raise Exception("NINTEX_GRANT_TYPE not set in environment")
+            raise NintexAuthError("NINTEX_GRANT_TYPE not set in environment")
 
         response = requests.post(
             os.environ["NINTEX_BASE_URL"] + "/authentication/v1/token",
@@ -84,13 +93,21 @@ class Decorators:
             },
             timeout=30,
         )
+        if not response.ok:
+            msg = (
+                f"Nintex token request failed ({response.status_code}): {response.text}"
+            )
+            logger.error(msg)
+            raise NintexAuthError(msg)
         try:
             os.environ["NTX_BEARER_TOKEN"] = response.json()["access_token"]
         except Exception as e:
             logger.error(f"Error, could not set OS env bearer token: {e}")
-            raise Exception(f"Error, could not set OS env bearer token: {e}") from e
+            raise NintexAuthError(
+                f"Error, could not set OS env bearer token: {e}"
+            ) from e
         try:
-            os.environ["NTX_EXPIRES_AT"] = response.json()["expires_at"]
+            os.environ["NTX_BEARER_TOKEN_EXPIRES_AT"] = response.json()["expires_at"]
         except Exception as e:
             logger.error(f"Error, could not set os env expires at: {e}")
-            raise Exception(f"Error, could not set os env expires at: {e}") from e
+            raise NintexAuthError(f"Error, could not set os env expires at: {e}") from e
